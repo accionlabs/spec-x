@@ -1,0 +1,302 @@
+{
+  "name": "Field Service Management",
+  "version": "1.0.0",
+  "description": "Specification for field service management applications",
+
+  "pricing": {
+    "currency": "USD",
+    "period": "month",
+    "base": {
+      "amount": 99,
+      "description": "Platform base fee",
+      "includes": ["Core app framework", "Offline-first architecture", "1 language"]
+    },
+    "perUser": {
+      "amount": 5,
+      "description": "Per active user"
+    },
+    "customField": {
+      "amount": 10,
+      "description": "Per custom field"
+    },
+    "customWorkflowState": {
+      "amount": 15,
+      "description": "Per custom workflow state"
+    },
+    "additionalLanguage": {
+      "amount": 25,
+      "description": "Per additional language"
+    }
+  },
+
+  "personas": [
+    {
+      "id": "technician",
+      "name": "Field Technician",
+      "description": "Service technicians who work on-site at customer locations",
+      "icon": "wrench",
+      "basePrice": 0,
+      "requiresSync": false,
+      "outcomes": [
+        {
+          "id": "manage-work-orders",
+          "name": "Manage Work Orders",
+          "description": "Create and manage your own work orders",
+          "scenarios": [
+            { "id": "create-work-orders", "name": "Create Work Orders", "description": "Create new work orders for yourself (essential for individual mode)", "default": true, "price": 0, "included": true },
+            { "id": "edit-work-orders", "name": "Edit Work Orders", "description": "Modify work order details before completion", "default": true, "price": 0, "included": true }
+          ]
+        },
+        {
+          "id": "complete-work-orders",
+          "name": "Complete Work Orders",
+          "description": "View, update, and complete assigned work orders",
+          "scenarios": [
+            { "id": "view-work-orders", "name": "View Work Orders", "description": "See list of work orders assigned to me", "default": true, "price": 0, "included": true },
+            { "id": "update-status", "name": "Update Work Order Status", "description": "Change status as work progresses", "default": true, "price": 0, "included": true },
+            { "id": "complete-checklist", "name": "Complete Service Checklist", "description": "Check off required service items", "default": true, "price": 0, "included": true },
+            { "id": "capture-photos", "name": "Capture Site Photos", "description": "Take photos for documentation", "default": false, "price": 15 }
+          ]
+        },
+        {
+          "id": "track-equipment",
+          "name": "Track Equipment",
+          "description": "Look up and manage equipment information",
+          "scenarios": [
+            { "id": "view-history", "name": "View Service History", "description": "See past service records", "default": true, "price": 0, "included": true },
+            { "id": "scan-barcode", "name": "Scan Equipment Barcode", "description": "Quick lookup via barcode scan", "default": false, "price": 25 }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "dispatcher",
+      "name": "Dispatcher",
+      "description": "Coordinates and assigns work orders to technicians",
+      "icon": "radio",
+      "basePrice": 49,
+      "requiresSync": true,
+      "outcomes": [
+        {
+          "id": "assign-work-orders",
+          "name": "Assign Work Orders",
+          "description": "Distribute work to available technicians",
+          "scenarios": [
+            { "id": "view-unassigned", "name": "View Unassigned Orders", "description": "See orders needing assignment", "default": true, "price": 0, "included": true },
+            { "id": "assign-to-technician", "name": "Assign to Technician", "description": "Assign order to specific tech", "default": true, "price": 0, "included": true }
+          ]
+        },
+        {
+          "id": "monitor-progress",
+          "name": "Monitor Progress",
+          "description": "Track work order status and completion",
+          "scenarios": [
+            { "id": "track-status", "name": "Track Order Status", "description": "Monitor individual orders", "default": true, "price": 0, "included": true },
+            { "id": "view-map", "name": "View Map", "description": "See technician locations", "default": false, "price": 35 }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "manager",
+      "name": "Service Manager",
+      "description": "Oversees service operations and reporting",
+      "icon": "briefcase",
+      "basePrice": 79,
+      "requiresSync": true,
+      "outcomes": [
+        {
+          "id": "generate-reports",
+          "name": "Generate Reports",
+          "description": "Create operational and performance reports",
+          "scenarios": [
+            { "id": "completion-reports", "name": "Completion Reports", "description": "Work order completion stats", "default": true, "price": 0, "included": true },
+            { "id": "performance-trends", "name": "Performance Trends", "description": "Analyze performance trends over time", "default": false, "price": 25 }
+          ]
+        },
+        {
+          "id": "track-performance",
+          "name": "Team Performance",
+          "description": "Track team and individual performance",
+          "scenarios": [
+            { "id": "individual-metrics", "name": "Individual Metrics", "description": "View individual technician performance metrics", "default": true, "price": 0, "included": true },
+            { "id": "team-overview", "name": "Team Overview", "description": "View team performance overview", "default": false, "price": 20 }
+          ]
+        }
+      ]
+    }
+  ],
+
+  "dataModel": {
+    "entities": [
+      {
+        "id": "work-order",
+        "name": "Work Order",
+        "description": "A service request or job to be completed",
+        "icon": "clipboard-list",
+        "baseFields": [
+          { "id": "title", "name": "Title", "type": "text", "required": true, "description": "Brief description of the work" },
+          { "id": "description", "name": "Description", "type": "textarea", "required": false, "description": "Detailed work description" },
+          { "id": "status", "name": "Status", "type": "workflow", "workflow": "work-order-status", "required": true },
+          { "id": "priority", "name": "Priority", "type": "dropdown", "options": ["Low", "Medium", "High", "Critical"], "required": true, "default": "Medium" },
+          { "id": "assignedTo", "name": "Assigned To", "type": "text", "required": false, "description": "Technician assigned to this order" },
+          { "id": "dueDate", "name": "Due Date", "type": "date", "required": false },
+          { "id": "location", "name": "Location", "type": "text", "required": false, "description": "Service location address" },
+          { "id": "customerName", "name": "Customer Name", "type": "text", "required": true },
+          { "id": "customerPhone", "name": "Customer Phone", "type": "text", "required": false },
+          { "id": "createdAt", "name": "Created At", "type": "datetime", "required": true, "auto": true },
+          { "id": "updatedAt", "name": "Updated At", "type": "datetime", "required": true, "auto": true }
+        ],
+        "customFields": [],
+        "allowCustomFields": true
+      },
+      {
+        "id": "equipment",
+        "name": "Equipment",
+        "description": "Equipment or assets being serviced",
+        "icon": "cpu",
+        "baseFields": [
+          { "id": "name", "name": "Name", "type": "text", "required": true },
+          { "id": "serialNumber", "name": "Serial Number", "type": "text", "required": true },
+          { "id": "model", "name": "Model", "type": "text", "required": false },
+          { "id": "manufacturer", "name": "Manufacturer", "type": "text", "required": false },
+          { "id": "installDate", "name": "Install Date", "type": "date", "required": false },
+          { "id": "warrantyExpiry", "name": "Warranty Expiry", "type": "date", "required": false },
+          { "id": "location", "name": "Location", "type": "text", "required": false },
+          { "id": "notes", "name": "Notes", "type": "textarea", "required": false }
+        ],
+        "customFields": [],
+        "allowCustomFields": true
+      },
+      {
+        "id": "checklist-item",
+        "name": "Checklist Item",
+        "description": "Individual items in a service checklist",
+        "icon": "check-square",
+        "baseFields": [
+          { "id": "workOrderId", "name": "Work Order", "type": "reference", "ref": "work-order", "required": true },
+          { "id": "description", "name": "Description", "type": "text", "required": true },
+          { "id": "completed", "name": "Completed", "type": "checkbox", "required": true, "default": false },
+          { "id": "completedAt", "name": "Completed At", "type": "datetime", "required": false },
+          { "id": "notes", "name": "Notes", "type": "text", "required": false }
+        ],
+        "customFields": [],
+        "allowCustomFields": false
+      }
+    ],
+    "fieldTypes": [
+      { "id": "text", "name": "Text", "icon": "type", "description": "Single line text" },
+      { "id": "textarea", "name": "Long Text", "icon": "align-left", "description": "Multi-line text" },
+      { "id": "number", "name": "Number", "icon": "hash", "description": "Numeric value" },
+      { "id": "date", "name": "Date", "icon": "calendar", "description": "Date picker" },
+      { "id": "datetime", "name": "Date & Time", "icon": "clock", "description": "Date and time" },
+      { "id": "dropdown", "name": "Dropdown", "icon": "list", "description": "Select from options" },
+      { "id": "checkbox", "name": "Checkbox", "icon": "check-square", "description": "Yes/No toggle" },
+      { "id": "rating", "name": "Rating (1-5)", "icon": "star", "description": "Star rating" },
+      { "id": "reference", "name": "Reference", "icon": "link", "description": "Link to another entity" }
+    ]
+  },
+
+  "workflows": {
+    "work-order-status": {
+      "id": "work-order-status",
+      "name": "Work Order Status",
+      "description": "Tracks the lifecycle of a work order",
+      "states": [
+        { "id": "new", "name": "New", "color": "#6B7280", "isInitial": true, "description": "Newly created, not yet assigned" },
+        { "id": "assigned", "name": "Assigned", "color": "#3B82F6", "description": "Assigned to a technician" },
+        { "id": "in-progress", "name": "In Progress", "color": "#F59E0B", "description": "Work has started" },
+        { "id": "complete", "name": "Complete", "color": "#10B981", "isFinal": true, "description": "Work finished successfully" },
+        { "id": "cancelled", "name": "Cancelled", "color": "#EF4444", "isFinal": true, "description": "Order was cancelled" }
+      ],
+      "transitions": [
+        { "from": "new", "to": "assigned", "name": "Assign", "description": "Assign to technician" },
+        { "from": "new", "to": "cancelled", "name": "Cancel", "description": "Cancel the order" },
+        { "from": "assigned", "to": "in-progress", "name": "Start Work", "description": "Begin working" },
+        { "from": "assigned", "to": "new", "name": "Unassign", "description": "Remove assignment" },
+        { "from": "assigned", "to": "cancelled", "name": "Cancel", "description": "Cancel the order" },
+        { "from": "in-progress", "to": "complete", "name": "Complete", "description": "Mark as done", "conditions": [] },
+        { "from": "in-progress", "to": "assigned", "name": "Reassign", "description": "Assign to different tech" }
+      ],
+      "allowCustomStates": true,
+      "allowCustomTransitions": true
+    }
+  },
+
+  "authentication": {
+    "tiers": [
+      {
+        "id": "basic",
+        "name": "Basic Authentication",
+        "description": "Email/password with offline validation",
+        "price": 0,
+        "features": ["email-password", "offline-validation", "bcrypt-hashing"],
+        "available": true
+      },
+      {
+        "id": "pin-device",
+        "name": "PIN + Device Registration",
+        "description": "One-time PIN with device binding",
+        "price": 29,
+        "features": ["one-time-pin", "device-fingerprint", "device-registry"],
+        "available": false
+      },
+      {
+        "id": "magic-link",
+        "name": "Magic Links",
+        "description": "Passwordless email-based authentication",
+        "price": 49,
+        "features": ["email-links", "time-limited-tokens", "no-passwords"],
+        "available": false
+      },
+      {
+        "id": "oidc",
+        "name": "Self-Hosted OIDC",
+        "description": "Integrate with Keycloak, Authentik, or similar",
+        "price": 99,
+        "features": ["oauth2", "offline-tokens", "enterprise-sso"],
+        "available": false
+      }
+    ],
+    "addons": [
+      { "id": "mfa", "name": "Multi-Factor Auth", "description": "TOTP, SMS, or hardware key 2FA", "price": 25, "available": false },
+      { "id": "user-management", "name": "User Management UI", "description": "Admin panel for managing users", "price": 35, "available": false },
+      { "id": "audit-logging", "name": "Audit Logging", "description": "Track all authentication events", "price": 20, "available": false }
+    ]
+  },
+
+  "constraints": [
+    {
+      "id": "offline-first",
+      "name": "Offline-First",
+      "description": "App works fully offline with automatic sync",
+      "default": true,
+      "type": "toggle"
+    },
+    {
+      "id": "language",
+      "name": "Language",
+      "description": "Supported languages for the UI",
+      "type": "multi-select",
+      "options": [
+        { "id": "en", "name": "English", "default": true },
+        { "id": "es", "name": "Spanish", "default": false },
+        { "id": "pt", "name": "Portuguese", "default": false },
+        { "id": "fr", "name": "French", "default": false }
+      ]
+    },
+    {
+      "id": "infrastructure",
+      "name": "Infrastructure Level",
+      "description": "Determines sync architecture and cost",
+      "type": "single-select",
+      "default": "individual",
+      "options": [
+        { "id": "individual", "name": "Individual (No Server)", "cost": "$0/mo", "description": "Works offline only, no sync between devices", "users": "1" },
+        { "id": "team", "name": "Small Team", "cost": "$5-35/mo", "description": "Sync via CouchDB on Raspberry Pi or cheap VPS", "users": "2-20" },
+        { "id": "department", "name": "Department", "cost": "$50-200/mo", "description": "CouchDB on dedicated server", "users": "20-200" },
+        { "id": "enterprise", "name": "Enterprise", "cost": "Custom", "description": "CouchDB cluster with HA", "users": "1000s" }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,19 @@
+{
+  "name": "spec-x",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Specification-as-Product Demo - Field Service App",
+  "workspaces": [
+    "demo/*"
+  ],
+  "scripts": {
+    "dev": "npm run dev --workspaces --if-present",
+    "dev:selector": "npm run dev -w demo/spec-selector",
+    "dev:app": "npm run dev -w demo/field-service-app",
+    "build": "npm run build --workspaces --if-present",
+    "lint": "npm run lint --workspaces --if-present"
+  },
+  "devDependencies": {
+    "typescript": "^5.3.0"
+  }
+}

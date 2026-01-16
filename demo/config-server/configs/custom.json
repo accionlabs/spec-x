@@ -1,0 +1,81 @@
+{
+  "version": "1767773837006",
+  "generatedAt": "2026-01-07T08:17:17.006Z",
+  "features": {
+    "personas": [
+      "technician"
+    ],
+    "scenarios": [
+      "view-assigned",
+      "update-status",
+      "complete-checklist",
+      "add-notes",
+      "lookup-equipment",
+      "view-history"
+    ]
+  },
+  "customFields": {
+    "workOrder": [
+      {
+        "id": "equipmentSerialNumber",
+        "name": "equipmentSerialNumber",
+        "type": "text",
+        "label": "equipmentSerialNumber",
+        "required": false
+      },
+      {
+        "id": "safetyChecklistCompleted",
+        "name": "safetyChecklistCompleted",
+        "type": "checkbox",
+        "label": "safetyChecklistCompleted",
+        "required": true
+      },
+      {
+        "id": "custom-1767773820400",
+        "name": "equipmentModelNumber",
+        "type": "text",
+        "label": "equipmentModelNumber",
+        "required": true
+      }
+    ]
+  },
+  "workflowStates": [
+    {
+      "id": "new",
+      "name": "New",
+      "color": "bg-gray-500",
+      "isCustom": false
+    },
+    {
+      "id": "assigned",
+      "name": "Assigned",
+      "color": "bg-blue-500",
+      "isCustom": false
+    },
+    {
+      "id": "in-progress",
+      "name": "In Progress",
+      "color": "bg-yellow-500",
+      "isCustom": false
+    },
+    {
+      "id": "complete",
+      "name": "Complete",
+      "color": "bg-green-500",
+      "isCustom": false
+    },
+    {
+      "id": "cancelled",
+      "name": "Cancelled",
+      "color": "bg-red-500",
+      "isCustom": false
+    }
+  ],
+  "constraints": {
+    "offlineFirst": true,
+    "languages": [
+      "en"
+    ],
+    "infrastructure": "individual"
+  }
+}

@@ -1,0 +1,71 @@
+{
+  "version": "1768306051450",
+  "generatedAt": "2026-01-13T12:07:31.450Z",
+  "features": {
+    "personas": [
+      "technician"
+    ],
+    "scenarios": [
+      "create-work-orders",
+      "edit-work-orders",
+      "view-work-orders",
+      "update-status",
+      "complete-checklist",
+      "view-history",
+      "view-unassigned",
+      "assign-to-technician",
+      "track-status",
+      "completion-reports",
+      "individual-metrics"
+    ]
+  },
+  "customFields": {
+    "workOrder": []
+  },
+  "workflowStates": [
+    {
+      "id": "new",
+      "name": "New",
+      "color": "bg-gray-500",
+      "isCustom": false
+    },
+    {
+      "id": "assigned",
+      "name": "Assigned",
+      "color": "bg-blue-500",
+      "isCustom": false
+    },
+    {
+      "id": "in-progress",
+      "name": "In Progress",
+      "color": "bg-yellow-500",
+      "isCustom": false
+    },
+    {
+      "id": "complete",
+      "name": "Complete",
+      "color": "bg-green-500",
+      "isCustom": false
+    },
+    {
+      "id": "cancelled",
+      "name": "Cancelled",
+      "color": "bg-red-500",
+      "isCustom": false
+    }
+  ],
+  "constraints": {
+    "offlineFirst": true,
+    "languages": [
+      "en"
+    ],
+    "infrastructure": "individual"
+  },
+  "authentication": {
+    "method": "basic",
+    "mfaEnabled": false,
+    "userManagementEnabled": false,
+    "auditLoggingEnabled": false
+  },
+  "users": []
+}

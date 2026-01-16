@@ -1,0 +1,106 @@
+{
+  "app": {
+    "title": "Servicio de Campo",
+    "subtitle": "Gestión de Órdenes de Trabajo"
+  },
+  "status": {
+    "online": "En Línea",
+    "offline": "Sin Conexión",
+    "syncing": "Sincronizando...",
+    "synced": "Todos los cambios sincronizados",
+    "pending": "{{count}} cambio pendiente",
+    "pending_plural": "{{count}} cambios pendientes"
+  },
+  "nav": {
+    "dashboard": "Panel",
+    "workOrders": "Completar Órdenes",
+    "equipment": "Rastrear Equipos",
+    "settings": "Configuración",
+    "assign": "Asignar Órdenes",
+    "monitorProgress": "Monitorear Progreso",
+    "reports": "Generar Informes",
+    "team": "Rendimiento del Equipo"
+  },
+  "workOrder": {
+    "title": "Órdenes de Trabajo",
+    "new": "Nuevo",
+    "assigned": "Asignado",
+    "inProgress": "En Progreso",
+    "awaitingParts": "Esperando Piezas",
+    "complete": "Completado",
+    "priority": {
+      "low": "Baja",
+      "medium": "Media",
+      "high": "Alta",
+      "critical": "Crítica"
+    },
+    "fields": {
+      "title": "Título",
+      "description": "Descripción",
+      "status": "Estado",
+      "priority": "Prioridad",
+      "assignedTo": "Asignado a",
+      "dueDate": "Fecha de Vencimiento",
+      "location": "Ubicación",
+      "equipmentSerial": "Número de Serie del Equipo",
+      "safetyChecklist": "Lista de Verificación de Seguridad Completada",
+      "customerSatisfaction": "Satisfacción del Cliente",
+      "notes": "Notas de Trabajo",
+      "photos": "Fotos del Sitio"
+    },
+    "actions": {
+      "start": "Iniciar Trabajo",
+      "complete": "Marcar Completado",
+      "save": "Guardar Cambios",
+      "addNote": "Agregar Nota",
+      "capturePhoto": "Capturar Foto del Sitio"
+    },
+    "checklist": {
+      "title": "Lista de Verificación del Servicio",
+      "items": {
+        "inspect": "Inspección Inicial",
+        "diagnose": "Diagnosticar Problema",
+        "repair": "Realizar Reparación",
+        "test": "Probar Sistema",
+        "cleanup": "Limpiar Área de Trabajo"
+      }
+    }
+  },
+  "equipment": {
+    "title": "Equipos",
+    "search": "Buscar equipo...",
+    "fields": {
+      "name": "Nombre",
+      "serialNumber": "Número de Serie",
+      "manufacturer": "Fabricante",
+      "installDate": "Fecha de Instalación",
+      "lastService": "Último Servicio"
+    },
+    "scanner": {
+      "title": "Escanear Código de Barras",
+      "button": "Escanear",
+      "instruction": "Posicione el código de barras dentro del marco",
+      "scanning": "Escaneando...",
+      "scan": "Escanear Código"
+    }
+  },
+  "settings": {
+    "title": "Configuración",
+    "language": "Idioma",
+    "sync": "Configuración de Sincronización",
+    "syncUrl": "URL del Servidor de Sincronización",
+    "clearData": "Borrar Datos Locales",
+    "about": "Acerca de"
+  },
+  "map": {
+    "title": "Ver Mapa",
+    "legend": "Leyenda",
+    "techActive": "Técnico (Activo)",
+    "techOnBreak": "Técnico (En Descanso)",
+    "highPriority": "Orden de Alta Prioridad",
+    "medPriority": "Orden de Prioridad Media",
+    "onBreak": "En Descanso",
+    "active": "Activo",
+    "break": "Descanso"
+  }
+}

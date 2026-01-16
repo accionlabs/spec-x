@@ -1,0 +1,978 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Specification-as-Product - Presentation</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@4.6.1/dist/reveal.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@4.6.1/dist/theme/white.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@4.6.1/plugin/highlight/monokai.css">
+  <style>
+    :root {
+      --r-heading-color: #1e293b;
+      --r-main-color: #334155;
+      --r-link-color: #2563eb;
+      --r-background-color: #ffffff;
+    }
+    .reveal h1, .reveal h2, .reveal h3 {
+      text-transform: none;
+      font-weight: 700;
+    }
+    .reveal h1 { font-size: 2.5em; }
+    .reveal h2 { font-size: 1.8em; }
+    .reveal h3 { font-size: 1.4em; }
+    .reveal .subtitle {
+      color: #64748b;
+      font-size: 1.2em;
+      margin-top: 0.5em;
+    }
+    .reveal .highlight {
+      color: #2563eb;
+      font-weight: 600;
+    }
+    .reveal .warning {
+      color: #dc2626;
+      font-weight: 600;
+    }
+    .reveal .success {
+      color: #16a34a;
+      font-weight: 600;
+    }
+    .reveal table {
+      font-size: 0.7em;
+      margin: 1em auto;
+    }
+    .reveal table th {
+      background: #f1f5f9;
+      font-weight: 600;
+    }
+    .reveal table td, .reveal table th {
+      padding: 0.5em 1em;
+      border: 1px solid #e2e8f0;
+    }
+    .reveal .two-column {
+      display: flex;
+      gap: 2em;
+    }
+    .reveal .two-column > div {
+      flex: 1;
+    }
+    .reveal .box {
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      padding: 1em;
+      margin: 0.5em 0;
+    }
+    .reveal .box.blue {
+      background: #eff6ff;
+      border-color: #bfdbfe;
+    }
+    .reveal .box.green {
+      background: #f0fdf4;
+      border-color: #bbf7d0;
+    }
+    .reveal .box.red {
+      background: #fef2f2;
+      border-color: #fecaca;
+    }
+    .reveal .box.purple {
+      background: #faf5ff;
+      border-color: #e9d5ff;
+    }
+    .reveal pre {
+      font-size: 0.55em;
+      width: 100%;
+    }
+    .reveal code {
+      font-family: 'SF Mono', 'Fira Code', monospace;
+    }
+    .reveal .small {
+      font-size: 0.7em;
+    }
+    .reveal .fragment.current-visible.visible:not(.current-fragment) {
+      display: none;
+    }
+    .reveal .stat-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1em;
+      margin: 1em 0;
+    }
+    .reveal .stat-box {
+      text-align: center;
+      padding: 1em;
+      border-radius: 8px;
+    }
+    .reveal .stat-box .number {
+      font-size: 2.5em;
+      font-weight: 700;
+      line-height: 1;
+    }
+    .reveal .stat-box .label {
+      font-size: 0.8em;
+      color: #64748b;
+      margin-top: 0.5em;
+    }
+    .comparison-table {
+      width: 100%;
+    }
+    .comparison-table .good {
+      color: #16a34a;
+    }
+    .comparison-table .bad {
+      color: #dc2626;
+    }
+    .flow-diagram {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5em;
+      margin: 1em 0;
+      font-size: 0.9em;
+    }
+    .flow-diagram .arrow {
+      color: #94a3b8;
+    }
+    .flow-diagram .step {
+      background: #f1f5f9;
+      padding: 0.5em 1em;
+      border-radius: 4px;
+    }
+    .infrastructure-flow {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+      margin: 2em 0;
+      padding: 0 1em;
+    }
+    .infrastructure-flow .level {
+      text-align: center;
+      flex: 1;
+    }
+    .infrastructure-flow .level .icon {
+      font-size: 2em;
+      margin-bottom: 0.3em;
+    }
+    .infrastructure-flow .level .name {
+      font-weight: 600;
+      font-size: 0.8em;
+    }
+    .infrastructure-flow .level .cost {
+      color: #16a34a;
+      font-weight: 700;
+      font-size: 0.9em;
+    }
+    .infrastructure-flow .connector {
+      flex: 0.5;
+      text-align: center;
+      color: #94a3b8;
+      font-size: 1.5em;
+      margin-bottom: 1em;
+    }
+    .pillar-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 1em;
+      margin: 1em 0;
+    }
+    .pillar {
+      background: #f8fafc;
+      border-left: 4px solid #2563eb;
+      padding: 0.8em;
+      text-align: left;
+    }
+    .pillar h4 {
+      margin: 0 0 0.3em 0;
+      font-size: 0.9em;
+    }
+    .pillar p {
+      margin: 0;
+      font-size: 0.65em;
+      color: #64748b;
+    }
+
+    /* Demo iframe styles */
+    .demo-frame-container {
+      position: relative;
+      width: 100%;
+      height: 600px;
+      margin: 0 auto;
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+    }
+    .demo-frame {
+      width: 100%;
+      height: 100%;
+      border: none;
+      background: #f3f4f6;
+    }
+    .demo-header {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      background: linear-gradient(to bottom, rgba(0,0,0,0.7), transparent);
+      color: white;
+      padding: 0.5em 1em;
+      font-size: 0.6em;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      z-index: 10;
+      pointer-events: none;
+    }
+    .demo-header .label {
+      background: rgba(255,255,255,0.2);
+      padding: 0.3em 0.8em;
+      border-radius: 4px;
+      font-weight: 600;
+    }
+    .demo-header .url {
+      font-family: monospace;
+      opacity: 0.8;
+    }
+    .demo-controls {
+      text-align: center;
+      margin-top: 0.5em;
+    }
+    .demo-controls button {
+      background: #2563eb;
+      color: white;
+      border: none;
+      padding: 0.5em 1.5em;
+      border-radius: 6px;
+      font-size: 0.7em;
+      cursor: pointer;
+      margin: 0 0.3em;
+    }
+    .demo-controls button:hover {
+      background: #1d4ed8;
+    }
+    .demo-controls button.secondary {
+      background: #64748b;
+    }
+    .demo-hint {
+      font-size: 0.6em;
+      color: #64748b;
+      margin-top: 0.5em;
+    }
+
+    /* Mobile device frame for Field Service App */
+    .mobile-frame-container {
+      position: relative;
+      width: 375px;
+      height: 667px;
+      margin: 0 auto;
+      background: #1a1a1a;
+      border-radius: 40px;
+      padding: 12px;
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.4);
+    }
+    .mobile-frame-container::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 150px;
+      height: 25px;
+      background: #1a1a1a;
+      border-radius: 0 0 15px 15px;
+      z-index: 20;
+    }
+    .mobile-frame {
+      width: 100%;
+      height: 100%;
+      border: none;
+      border-radius: 30px;
+      background: #f3f4f6;
+    }
+
+    /* Side by side demo layout */
+    .demo-split {
+      display: flex;
+      gap: 2em;
+      align-items: flex-start;
+      justify-content: center;
+    }
+    .demo-split .demo-panel {
+      flex: 1;
+      max-width: 500px;
+    }
+    .demo-split .demo-panel h3 {
+      font-size: 1em;
+      margin-bottom: 0.5em;
+    }
+
+    /* Fullscreen button */
+    .fullscreen-btn {
+      position: absolute;
+      bottom: 10px;
+      right: 10px;
+      background: rgba(0,0,0,0.5);
+      color: white;
+      border: none;
+      padding: 0.4em 0.8em;
+      border-radius: 4px;
+      font-size: 0.5em;
+      cursor: pointer;
+      z-index: 20;
+    }
+    .fullscreen-btn:hover {
+      background: rgba(0,0,0,0.7);
+    }
+  </style>
+</head>
+<body>
+  <div class="reveal">
+    <div class="slides">
+
+      <!-- Title Slide -->
+      <section>
+        <h1>Specification-as-Product</h1>
+        <p class="subtitle">À-la-carte at Buffet Economics</p>
+        <br><br>
+        <p class="small" style="color: #94a3b8;">Navigate with arrow keys or swipe</p>
+      </section>
+
+      <!-- The Problem -->
+      <section>
+        <h2>The Problem</h2>
+        <p class="subtitle">One-Size-Fits-All Software</p>
+        <div class="two-column" style="margin-top: 1em;">
+          <div class="box red">
+            <h3 style="margin-top: 0;">The Buffet (SaaS)</h3>
+            <ul class="small" style="text-align: left;">
+              <li>Bloated with unused features</li>
+              <li>Paying for complexity you don't need</li>
+              <li>$20+ per user/month</li>
+              <li>Vendor lock-in</li>
+            </ul>
+          </div>
+          <div class="box red">
+            <h3 style="margin-top: 0;">À-la-carte (Custom Dev)</h3>
+            <ul class="small" style="text-align: left;">
+              <li>Time: 12-24 months</li>
+              <li>Cost: $500K - $2M+</li>
+              <li>High project risk</li>
+              <li>Ongoing maintenance burden</li>
+            </ul>
+          </div>
+        </div>
+        <p class="fragment" style="margin-top: 1em; font-size: 1.3em;">
+          <strong>"What if there was a third option?"</strong>
+        </p>
+      </section>
+
+      <!-- The False Dichotomy -->
+      <section>
+        <h2>The False Dichotomy</h2>
+        <table class="comparison-table">
+          <thead>
+            <tr>
+              <th>Aspect</th>
+              <th>Buffet (SaaS)</th>
+              <th>À-la-carte (Custom)</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>Time</strong></td>
+              <td class="good">Quick setup</td>
+              <td class="bad">12-24 months</td>
+            </tr>
+            <tr>
+              <td><strong>Cost</strong></td>
+              <td class="bad">Ongoing fees</td>
+              <td class="bad">Large upfront</td>
+            </tr>
+            <tr>
+              <td><strong>Fit</strong></td>
+              <td class="bad">Compromise</td>
+              <td class="good">Perfect fit</td>
+            </tr>
+            <tr>
+              <td><strong>Control</strong></td>
+              <td class="bad">Limited</td>
+              <td class="good">Full</td>
+            </tr>
+            <tr>
+              <td><strong>Risk</strong></td>
+              <td class="bad">Vendor lock-in</td>
+              <td class="bad">Project failure</td>
+            </tr>
+          </tbody>
+        </table>
+        <p class="fragment" style="font-size: 1.2em; color: #dc2626;"><strong>Neither is ideal.</strong></p>
+      </section>
+
+      <!-- The Third Option -->
+      <section>
+        <h2>The Third Option</h2>
+        <div class="box blue" style="font-size: 1.3em; padding: 1.5em;">
+          <strong>Specification-as-Product</strong><br>
+          <span style="color: #64748b; font-size: 0.8em;">"À-la-carte at buffet economics"</span>
+        </div>
+        <div style="margin-top: 1.5em; text-align: left; max-width: 800px; margin-left: auto; margin-right: auto;">
+          <p class="fragment"><span class="highlight">Semantic Engineering</span> + <span class="highlight">Local-First Architecture</span></p>
+          <p class="fragment">= <strong>New unit economics</strong></p>
+          <ul class="fragment small">
+            <li>Define <em>what</em> you need, not <em>how</em> to build it</li>
+            <li>Generated code is <strong>your</strong> code</li>
+            <li>No vendor lock-in</li>
+            <li>Works offline by default</li>
+          </ul>
+        </div>
+      </section>
+
+      <!-- Cloud-First vs Local-First -->
+      <section>
+        <h2>Why Local-First Matters</h2>
+        <table class="comparison-table">
+          <thead>
+            <tr>
+              <th>Cloud-First</th>
+              <th>Local-First</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="bad">Broken offline</td>
+              <td class="good">Works offline</td>
+            </tr>
+            <tr>
+              <td class="bad">Network latency</td>
+              <td class="good">Instant response</td>
+            </tr>
+            <tr>
+              <td class="bad">Server costs</td>
+              <td class="good">Zero server costs</td>
+            </tr>
+            <tr>
+              <td class="bad">Data on their servers</td>
+              <td class="good">Data on your device</td>
+            </tr>
+            <tr>
+              <td class="bad">Dependent on vendor</td>
+              <td class="good">Full ownership</td>
+            </tr>
+          </tbody>
+        </table>
+        <div class="fragment box" style="margin-top: 1em;">
+          <strong>Real scenarios:</strong> Airplane mode, Subway, Remote job sites, Poor connectivity, Server outages
+        </div>
+      </section>
+
+      <!-- Progressive Infrastructure -->
+      <section>
+        <h2>Progressive Infrastructure</h2>
+        <p class="subtitle">Start with zero infrastructure</p>
+        <div class="infrastructure-flow">
+          <div class="level">
+            <div class="icon">📱</div>
+            <div class="name">Individual</div>
+            <div class="cost">$0/mo</div>
+          </div>
+          <div class="connector">→</div>
+          <div class="level">
+            <div class="icon">👥</div>
+            <div class="name">Small Team</div>
+            <div class="cost">$5-35/mo</div>
+          </div>
+          <div class="connector">→</div>
+          <div class="level">
+            <div class="icon">🏢</div>
+            <div class="name">Department</div>
+            <div class="cost">$50-200/mo</div>
+          </div>
+          <div class="connector">→</div>
+          <div class="level">
+            <div class="icon">🏛️</div>
+            <div class="name">Enterprise</div>
+            <div class="cost">Custom</div>
+          </div>
+        </div>
+        <div class="box green fragment">
+          <strong>The magic:</strong> Same app code works at every level.<br>
+          <span class="small">Just add a sync URL when you're ready to share.</span>
+        </div>
+      </section>
+
+      <!-- The Four Pillars -->
+      <section>
+        <h2>The Four Pillars</h2>
+        <div class="pillar-grid">
+          <div class="pillar">
+            <h4>1. Semantic Engineering</h4>
+            <p>Functional Ontology → Design → Architecture → Code<br>Every feature traceable to a business requirement</p>
+          </div>
+          <div class="pillar">
+            <h4>2. Local-First Architecture</h4>
+            <p>PouchDB (client) ↔ CouchDB (server)<br>Battle-tested sync protocol</p>
+          </div>
+          <div class="pillar">
+            <h4>3. Market Expansion</h4>
+            <p>3B+ users with intermittent connectivity<br>Previously unviable markets now profitable</p>
+          </div>
+          <div class="pillar">
+            <h4>4. New Business Model</h4>
+            <p>Product-based, not service-based pricing<br>Dramatically lower per-unit costs</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- Demo Transition -->
+      <section data-background="#2563eb">
+        <h1 style="color: white;">Live Demo</h1>
+        <p style="color: rgba(255,255,255,0.8); font-size: 1.3em;">"Let me show you how it works..."</p>
+        <br><br>
+        <p style="color: rgba(255,255,255,0.6);">
+          Specification Selector → Generation Theater → Field Service App
+        </p>
+      </section>
+
+      <!-- LIVE DEMO: Spec Selector (Embedded) -->
+      <section data-background="#f8fafc">
+        <h2 style="margin-bottom: 0.3em;">Live Demo: Specification Selector</h2>
+        <div class="demo-frame-container" style="height: 550px;">
+          <div class="demo-header">
+            <span class="label">SPEC SELECTOR</span>
+            <span class="url">localhost:3000</span>
+          </div>
+          <iframe
+            class="demo-frame"
+            src="http://localhost:3000"
+            id="spec-selector-frame"
+          ></iframe>
+          <button class="fullscreen-btn" onclick="openFullscreen('http://localhost:3000')">
+            ⛶ Fullscreen
+          </button>
+        </div>
+        <p class="demo-hint">
+          Interact with the demo above • Select features, add custom fields, customize workflow
+        </p>
+      </section>
+
+      <!-- Demo Guidance: Spec Selector -->
+      <section>
+        <h2>Demo: Specification Selector</h2>
+        <p class="subtitle">What to show</p>
+        <div class="two-column small">
+          <div>
+            <div class="box">
+              <h4 style="margin-top: 0;">1. Feature Selection</h4>
+              <ul style="margin: 0;">
+                <li>Expand "Field Technician"</li>
+                <li>Expand "Complete Work Orders"</li>
+                <li>Toggle scenarios on/off</li>
+              </ul>
+            </div>
+            <div class="box">
+              <h4 style="margin-top: 0;">2. Data Model</h4>
+              <ul style="margin: 0;">
+                <li>Click "Data Model" tab</li>
+                <li>Add "Equipment Serial #" field</li>
+                <li>"These become real database columns"</li>
+              </ul>
+            </div>
+          </div>
+          <div>
+            <div class="box">
+              <h4 style="margin-top: 0;">3. Workflow</h4>
+              <ul style="margin: 0;">
+                <li>Click "Workflows" tab</li>
+                <li>Add "Awaiting Parts" status</li>
+                <li>"Generates actual state machine code"</li>
+              </ul>
+            </div>
+            <div class="box">
+              <h4 style="margin-top: 0;">4. Generate</h4>
+              <ul style="margin: 0;">
+                <li>Click "Constraints" tab</li>
+                <li>Note: Offline-First is ON</li>
+                <li>Click <strong>"Generate Product"</strong></li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Demo: Generation Theater Info -->
+      <section>
+        <h2>Generation Theater</h2>
+        <p class="subtitle">Watch the magic happen</p>
+        <div class="flow-diagram" style="flex-wrap: wrap; gap: 1em;">
+          <div class="step">Parsing Specs</div>
+          <div class="arrow">→</div>
+          <div class="step">Data Schema</div>
+          <div class="arrow">→</div>
+          <div class="step">State Machine</div>
+          <div class="arrow">→</div>
+          <div class="step">Sync SDK</div>
+          <div class="arrow">→</div>
+          <div class="step">Bundle</div>
+        </div>
+        <br>
+        <div class="box blue">
+          <p style="margin: 0;">
+            Watch as specifications transform into production-ready code.<br>
+            <span class="small">Real code snippets show what's being generated.</span>
+          </p>
+        </div>
+      </section>
+
+      <!-- LIVE DEMO: Field Service App (Embedded with Mobile Frame) -->
+      <section data-background="#f8fafc">
+        <h2 style="margin-bottom: 0.3em;">Live Demo: Field Service App</h2>
+        <div style="display: flex; align-items: flex-start; justify-content: center; gap: 2em;">
+          <div class="mobile-frame-container">
+            <iframe
+              class="mobile-frame"
+              src="http://localhost:3001"
+              id="field-app-frame"
+            ></iframe>
+          </div>
+          <div style="width: 300px; text-align: left;">
+            <div class="box green small">
+              <h4 style="margin-top: 0;">Try This:</h4>
+              <ol style="margin: 0; padding-left: 1.2em;">
+                <li>Browse work orders</li>
+                <li>Tap a work order</li>
+                <li>Toggle checklist items</li>
+                <li>Change status</li>
+                <li>Add a note</li>
+              </ol>
+            </div>
+            <div class="box purple small" style="margin-top: 0.5em;">
+              <h4 style="margin-top: 0;">Offline Test:</h4>
+              <ol style="margin: 0; padding-left: 1.2em;">
+                <li>Note "Online" status</li>
+                <li><strong>Turn off WiFi</strong></li>
+                <li>Keep using the app!</li>
+                <li>Turn WiFi back on</li>
+                <li>Watch it sync</li>
+              </ol>
+            </div>
+            <button class="fullscreen-btn" style="position: relative; margin-top: 1em;" onclick="openFullscreen('http://localhost:3001')">
+              ⛶ Open Fullscreen
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <!-- Offline Demo Emphasis -->
+      <section data-background="#fef3c7">
+        <h2>The WOW Moment</h2>
+        <div style="font-size: 4em; margin: 0.3em 0;">📵</div>
+        <h3 style="color: #92400e;">Turn Off Your WiFi</h3>
+        <div class="box" style="background: white; max-width: 500px; margin: 1em auto;">
+          <ol style="text-align: left; margin: 0;">
+            <li>Watch the status change to <strong style="color: #f59e0b;">"Offline"</strong></li>
+            <li>Continue working - update status, add notes</li>
+            <li><strong>No spinners. No errors. Just works.</strong></li>
+            <li>Turn WiFi back on</li>
+            <li>Watch changes sync automatically</li>
+          </ol>
+        </div>
+        <p class="fragment" style="font-size: 1.2em; color: #92400e;">
+          <strong>This is what local-first means.</strong>
+        </p>
+      </section>
+
+      <!-- Multi-language Demo -->
+      <section>
+        <h2>Multi-Language Support</h2>
+        <p class="subtitle">Generated with i18n built-in</p>
+        <div class="two-column">
+          <div class="box">
+            <h4 style="margin-top: 0;">🇺🇸 English</h4>
+            <p class="small">Work Orders<br>In Progress<br>Complete Service Checklist</p>
+          </div>
+          <div class="box">
+            <h4 style="margin-top: 0;">🇪🇸 Español</h4>
+            <p class="small">Órdenes de Trabajo<br>En Progreso<br>Lista de Verificación del Servicio</p>
+          </div>
+        </div>
+        <p class="fragment" style="margin-top: 1em;">
+          Try it: Change language in the app header (EN → ES)
+        </p>
+      </section>
+
+      <!-- What Just Happened -->
+      <section>
+        <h2>What Just Happened</h2>
+        <div class="flow-diagram" style="flex-direction: column; gap: 0.3em;">
+          <div class="step" style="background: #dbeafe;">Functional Ontology</div>
+          <div class="arrow">↓</div>
+          <div class="step">Design Patterns</div>
+          <div class="arrow">↓</div>
+          <div class="step">Architecture Decisions</div>
+          <div class="arrow">↓</div>
+          <div class="step" style="background: #dcfce7;">Generated Code (React + PouchDB + TypeScript)</div>
+        </div>
+        <br>
+        <p class="fragment"><strong>Every feature is traceable</strong> back to a business requirement.</p>
+      </section>
+
+      <!-- Technology Stack -->
+      <section>
+        <h2>The Technology Stack</h2>
+        <p class="subtitle">For Architects</p>
+        <div class="box" style="margin: 1em 0;">
+          <p style="margin: 0;"><strong>We didn't build sync</strong> — we wrapped battle-tested tech</p>
+        </div>
+        <pre><code class="language-typescript">const sdk = createSyncSDK({
+  dbName: 'field-service',
+  offlineFirst: true,
+
+  collections: {
+    workOrders: {
+      conflictStrategy: 'last-write-wins',
+      indexedFields: ['status', 'assignedTo']
+    }
+  },
+
+  // Remote is OPTIONAL - works offline without it
+  remote: syncEnabled ? {
+    url: couchdbUrl,
+    auth: { type: 'jwt', tokenProvider }
+  } : undefined
+});</code></pre>
+      </section>
+
+      <!-- The Economics -->
+      <section>
+        <h2>The Economics</h2>
+        <table class="comparison-table">
+          <thead>
+            <tr>
+              <th>Factor</th>
+              <th>Traditional Custom Dev</th>
+              <th>Sp-a-a-S</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>Development Cost</strong></td>
+              <td class="bad">$500K - $2M</td>
+              <td class="good">$50K - $100K</td>
+            </tr>
+            <tr>
+              <td><strong>Time to Market</strong></td>
+              <td class="bad">18-24 months</td>
+              <td class="good">2-4 months</td>
+            </tr>
+            <tr>
+              <td><strong>Infrastructure (Start)</strong></td>
+              <td class="bad">$500+/month</td>
+              <td class="good">$0</td>
+            </tr>
+            <tr>
+              <td><strong>Infrastructure (Scale)</strong></td>
+              <td class="bad">$20+/user/mo</td>
+              <td class="good">$0.50-$2/user/mo</td>
+            </tr>
+            <tr>
+              <td><strong>Updates</strong></td>
+              <td class="bad">Change requests</td>
+              <td class="good">Update spec, regenerate</td>
+            </tr>
+          </tbody>
+        </table>
+        <div class="fragment stat-grid" style="margin-top: 1em;">
+          <div class="stat-box" style="background: #dcfce7;">
+            <div class="number" style="color: #16a34a;">80%</div>
+            <div class="label">Cost Reduction</div>
+          </div>
+          <div class="stat-box" style="background: #dbeafe;">
+            <div class="number" style="color: #2563eb;">5x</div>
+            <div class="label">Faster</div>
+          </div>
+          <div class="stat-box" style="background: #fef3c7;">
+            <div class="number" style="color: #d97706;">$0</div>
+            <div class="label">To Start</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Markets Now Accessible -->
+      <section>
+        <h2>Markets Now Accessible</h2>
+        <div class="stat-box" style="background: #dbeafe; display: inline-block; padding: 0.8em 2em;">
+          <div class="number" style="color: #2563eb;">3B+</div>
+          <div class="label">Users with intermittent connectivity</div>
+        </div>
+        <div class="two-column small" style="margin-top: 1em;">
+          <div class="box">
+            <ul style="margin: 0; text-align: left;">
+              <li>Agricultural workers</li>
+              <li>Construction crews</li>
+              <li>Healthcare workers</li>
+            </ul>
+          </div>
+          <div class="box">
+            <ul style="margin: 0; text-align: left;">
+              <li>Field service technicians</li>
+              <li>Emergency responders</li>
+              <li>Developing markets</li>
+            </ul>
+          </div>
+        </div>
+        <p class="fragment" style="margin-top: 1em;">
+          <strong>Local-first makes these markets accessible.</strong>
+        </p>
+      </section>
+
+      <!-- Key Takeaways -->
+      <section>
+        <h2>Key Takeaways</h2>
+        <div class="two-column small">
+          <div>
+            <div class="box blue">
+              <h4 style="margin-top: 0;">For Executives</h4>
+              <ul style="margin: 0; text-align: left;">
+                <li>80% cost reduction</li>
+                <li>5x faster time-to-market</li>
+                <li>Zero infrastructure to start</li>
+                <li>Access 3B+ new users</li>
+              </ul>
+            </div>
+          </div>
+          <div>
+            <div class="box purple">
+              <h4 style="margin-top: 0;">For Architects</h4>
+              <ul style="margin: 0; text-align: left;">
+                <li>Ontology-driven & traceable</li>
+                <li>PouchDB/CouchDB battle-tested</li>
+                <li>Same protocol at every scale</li>
+                <li>Pluggable conflict resolution</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+        <div class="box green fragment" style="margin-top: 1em; text-align: center;">
+          <strong>For Everyone:</strong> Pay only for what you need. Works offline. Your data stays yours.
+        </div>
+      </section>
+
+      <!-- Q&A -->
+      <section data-background="#1e293b">
+        <h1 style="color: white;">Questions?</h1>
+        <br>
+        <div style="color: rgba(255,255,255,0.7);">
+          <p>Demo URLs:</p>
+          <p style="font-family: monospace;">
+            Spec Selector: localhost:3000<br>
+            Field Service App: localhost:3001
+          </p>
+        </div>
+      </section>
+
+      <!-- Appendix: Conflict Resolution -->
+      <section>
+        <h2>Appendix: Conflict Resolution</h2>
+        <table class="comparison-table">
+          <thead>
+            <tr>
+              <th>Strategy</th>
+              <th>Use Case</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>Last-Write-Wins</strong></td>
+              <td>Simple, most common scenarios</td>
+            </tr>
+            <tr>
+              <td><strong>Field-Level Merge</strong></td>
+              <td>Complex documents with independent fields</td>
+            </tr>
+            <tr>
+              <td><strong>Automerge CRDT</strong></td>
+              <td>Real-time collaboration</td>
+            </tr>
+            <tr>
+              <td><strong>Custom Resolver</strong></td>
+              <td>Domain-specific business logic</td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+
+      <!-- Appendix: Privacy Levels -->
+      <section>
+        <h2>Appendix: Privacy Levels</h2>
+        <div class="flow-diagram">
+          <div class="step">local</div>
+          <div class="arrow">→</div>
+          <div class="step">private</div>
+          <div class="arrow">→</div>
+          <div class="step">team</div>
+          <div class="arrow">→</div>
+          <div class="step">department</div>
+          <div class="arrow">→</div>
+          <div class="step">organization</div>
+        </div>
+        <br>
+        <p><strong>Data sovereignty:</strong> Control what syncs where.</p>
+        <div class="box small">
+          <ul style="text-align: left;">
+            <li><strong>local</strong> - Never leaves the device</li>
+            <li><strong>private</strong> - Syncs only to user's other devices</li>
+            <li><strong>team</strong> - Shared within immediate team</li>
+            <li><strong>department</strong> - Visible to department</li>
+            <li><strong>organization</strong> - Company-wide access</li>
+          </ul>
+        </div>
+      </section>
+
+      <!-- Appendix: SDK API -->
+      <section>
+        <h2>Appendix: SDK API</h2>
+        <pre><code class="language-typescript">// React Hooks
+const { data, loading } = useCollection('workOrders', {
+  filter: { status: 'pending' }
+});
+
+const { data: workOrder } = useDocument('workOrders', id);
+
+// Write Operations
+await sdk.put('workOrders', workOrder);
+await sdk.remove('workOrders', id);
+
+// Sync Status
+const { status, pendingChanges } = useSyncStatus();
+// status: 'online' | 'offline' | 'syncing'</code></pre>
+      </section>
+
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/reveal.js@4.6.1/dist/reveal.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/reveal.js@4.6.1/plugin/highlight/highlight.js"></script>
+  <script>
+    Reveal.initialize({
+      hash: true,
+      slideNumber: true,
+      plugins: [RevealHighlight],
+      transition: 'slide',
+      backgroundTransition: 'fade'
+    });
+
+    // Function to open demo in fullscreen/new window
+    function openFullscreen(url) {
+      window.open(url, '_blank', 'width=1200,height=800');
+    }
+
+    // Refresh iframes when slides become visible
+    Reveal.on('slidechanged', event => {
+      const iframe = event.currentSlide.querySelector('iframe');
+      if (iframe && !iframe.src.includes('localhost')) {
+        // Reload iframe if needed
+      }
+    });
+  </script>
+</body>
+</html>

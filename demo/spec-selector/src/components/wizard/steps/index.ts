@@ -1,0 +1,8 @@
+export { default as WelcomeStep } from './WelcomeStep'
+export { default as TeamSizeStep } from './TeamSizeStep'
+export { default as FeaturesStep } from './FeaturesStep'
+export { default as DataModelStep } from './DataModelStep'
+export { default as WorkflowStep } from './WorkflowStep'
+export { default as DeploymentStep } from './DeploymentStep'
+export { default as UsersStep } from './UsersStep'
+export { default as ReviewStep } from './ReviewStep'

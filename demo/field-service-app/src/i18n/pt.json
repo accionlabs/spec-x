@@ -1,0 +1,106 @@
+{
+  "app": {
+    "title": "Serviço de Campo",
+    "subtitle": "Gestão de Ordens de Serviço"
+  },
+  "status": {
+    "online": "Online",
+    "offline": "Offline",
+    "syncing": "Sincronizando...",
+    "synced": "Todas as alterações sincronizadas",
+    "pending": "{{count}} alteração pendente",
+    "pending_plural": "{{count}} alterações pendentes"
+  },
+  "nav": {
+    "dashboard": "Painel",
+    "workOrders": "Completar Ordens",
+    "equipment": "Rastrear Equipamentos",
+    "settings": "Configurações",
+    "assign": "Atribuir Ordens",
+    "monitorProgress": "Monitorar Progresso",
+    "reports": "Gerar Relatórios",
+    "team": "Desempenho da Equipe"
+  },
+  "workOrder": {
+    "title": "Ordens de Serviço",
+    "new": "Nova",
+    "assigned": "Atribuída",
+    "inProgress": "Em Andamento",
+    "awaitingParts": "Aguardando Peças",
+    "complete": "Concluída",
+    "priority": {
+      "low": "Baixa",
+      "medium": "Média",
+      "high": "Alta",
+      "critical": "Crítica"
+    },
+    "fields": {
+      "title": "Título",
+      "description": "Descrição",
+      "status": "Status",
+      "priority": "Prioridade",
+      "assignedTo": "Atribuído a",
+      "dueDate": "Data de Vencimento",
+      "location": "Local",
+      "equipmentSerial": "Nº de Série do Equipamento",
+      "safetyChecklist": "Lista de Segurança Concluída",
+      "customerSatisfaction": "Satisfação do Cliente",
+      "notes": "Notas de Trabalho",
+      "photos": "Fotos do Local"
+    },
+    "actions": {
+      "start": "Iniciar Trabalho",
+      "complete": "Marcar como Concluído",
+      "save": "Salvar Alterações",
+      "addNote": "Adicionar Nota",
+      "capturePhoto": "Capturar Foto do Local"
+    },
+    "checklist": {
+      "title": "Lista de Verificação",
+      "items": {
+        "inspect": "Inspeção Inicial",
+        "diagnose": "Diagnosticar Problema",
+        "repair": "Realizar Reparo",
+        "test": "Testar Sistema",
+        "cleanup": "Limpar Área de Trabalho"
+      }
+    }
+  },
+  "equipment": {
+    "title": "Equipamentos",
+    "search": "Buscar equipamento...",
+    "fields": {
+      "name": "Nome",
+      "serialNumber": "Número de Série",
+      "manufacturer": "Fabricante",
+      "installDate": "Data de Instalação",
+      "lastService": "Último Serviço"
+    },
+    "scanner": {
+      "title": "Escanear Código de Barras",
+      "button": "Escanear",
+      "instruction": "Posicione o código de barras no quadro",
+      "scanning": "Escaneando...",
+      "scan": "Escanear Código"
+    }
+  },
+  "settings": {
+    "title": "Configurações",
+    "language": "Idioma",
+    "sync": "Configurações de Sincronização",
+    "syncUrl": "URL do Servidor de Sincronização",
+    "clearData": "Limpar Dados Locais",
+    "about": "Sobre"
+  },
+  "map": {
+    "title": "Ver Mapa",
+    "legend": "Legenda",
+    "techActive": "Técnico (Ativo)",
+    "techOnBreak": "Técnico (Em Pausa)",
+    "highPriority": "Ordem de Alta Prioridade",
+    "medPriority": "Ordem de Média Prioridade",
+    "onBreak": "Em Pausa",
+    "active": "Ativo",
+    "break": "Pausa"
+  }
+}

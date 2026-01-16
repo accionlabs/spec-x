@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <meta name="theme-color" content="#2563eb" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <title>Field Service App</title>
+
+    <!-- Dynamic manifest and theme based on persona -->
+    <script>
+      (function() {
+        const path = window.location.pathname;
+        const personas = {
+          technician: { color: '#2563eb', title: 'Field Service - Technician' },
+          dispatcher: { color: '#ea580c', title: 'Field Service - Dispatcher' },
+          manager: { color: '#9333ea', title: 'Field Service - Manager' }
+        };
+
+        let persona = null;
+        if (path.startsWith('/technician')) persona = 'technician';
+        else if (path.startsWith('/dispatcher')) persona = 'dispatcher';
+        else if (path.startsWith('/manager')) persona = 'manager';
+
+        if (persona) {
+          // Set theme color
+          document.querySelector('meta[name="theme-color"]').content = personas[persona].color;
+
+          // Set title
+          document.title = personas[persona].title;
+
+          // Add manifest link
+          const manifestLink = document.createElement('link');
+          manifestLink.rel = 'manifest';
+          manifestLink.href = '/' + persona + '/manifest.json';
+          document.head.appendChild(manifestLink);
+
+          // Add apple touch icon
+          const appleIcon = document.createElement('link');
+          appleIcon.rel = 'apple-touch-icon';
+          appleIcon.href = '/' + persona + '/icon-192.svg';
+          document.head.appendChild(appleIcon);
+        }
+      })();
+    </script>
+
+    <!-- Load PouchDB from CDN before app scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/pouchdb@8.0.1/dist/pouchdb.min.js"></script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

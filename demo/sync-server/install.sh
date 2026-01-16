@@ -1,0 +1,425 @@
+#!/bin/bash
+
+# Field Service Sync Server - One-Line Installer
+# Usage: curl -sL <url>/install.sh | bash
+#
+# This script will:
+# 1. Check for Docker (and help install if missing)
+# 2. Install Tailscale for public IP access
+# 3. Create sync-server directory with all config files
+# 4. Start CouchDB container with auto-restart
+# 5. Initialize databases for sync
+
+set -e
+
+# Colors for output
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+BLUE='\033[0;34m'
+PURPLE='\033[0;35m'
+CYAN='\033[0;36m'
+NC='\033[0m' # No Color
+
+# Configuration
+INSTALL_DIR="${INSTALL_DIR:-$HOME/field-service-sync}"
+COUCH_USER="${COUCH_USER:-admin}"
+COUCH_PASSWORD="${COUCH_PASSWORD:-password}"
+COUCH_PORT="${COUCH_PORT:-5984}"
+SKIP_TAILSCALE="${SKIP_TAILSCALE:-false}"
+
+echo ""
+echo -e "${PURPLE}╔═══════════════════════════════════════════════════════════╗${NC}"
+echo -e "${PURPLE}║         Field Service Sync Server Installer               ║${NC}"
+echo -e "${PURPLE}╚═══════════════════════════════════════════════════════════╝${NC}"
+echo ""
+
+# ============================================
+# Step 1: Check for Docker
+# ============================================
+echo -e "${CYAN}[1/5]${NC} Checking Docker..."
+
+check_docker() {
+    if command -v docker &> /dev/null; then
+        DOCKER_VERSION=$(docker --version | cut -d' ' -f3 | tr -d ',')
+        echo -e "  ${GREEN}✓${NC} Docker ${DOCKER_VERSION} found"
+
+        # Check if Docker daemon is running
+        if ! docker info &> /dev/null; then
+            echo -e "  ${YELLOW}⚠${NC} Docker is installed but not running"
+            echo ""
+            echo -e "${YELLOW}Please start Docker and run this script again.${NC}"
+            echo ""
+
+            # Platform-specific instructions
+            case "$(uname -s)" in
+                Darwin)
+                    echo "  On macOS: Open Docker Desktop from Applications"
+                    ;;
+                Linux)
+                    echo "  On Linux: sudo systemctl start docker"
+                    ;;
+            esac
+            echo ""
+            exit 1
+        fi
+        return 0
+    else
+        return 1
+    fi
+}
+
+install_docker_instructions() {
+    echo -e "  ${RED}✗${NC} Docker not found"
+    echo ""
+    echo -e "${YELLOW}Docker is required. Please install Docker first:${NC}"
+    echo ""
+
+    case "$(uname -s)" in
+        Darwin)
+            echo -e "${CYAN}macOS:${NC}"
+            echo "  Option 1 (Recommended): Download Docker Desktop"
+            echo "    https://www.docker.com/products/docker-desktop"
+            echo ""
+            echo "  Option 2: Using Homebrew"
+            echo "    brew install --cask docker"
+            ;;
+        Linux)
+            echo -e "${CYAN}Linux:${NC}"
+            echo "  # Ubuntu/Debian:"
+            echo "  curl -fsSL https://get.docker.com | sh"
+            echo "  sudo usermod -aG docker \$USER"
+            echo ""
+            echo "  # Then log out and back in, or run:"
+            echo "  newgrp docker"
+            ;;
+        MINGW*|CYGWIN*|MSYS*)
+            echo -e "${CYAN}Windows:${NC}"
+            echo "  Download Docker Desktop from:"
+            echo "    https://www.docker.com/products/docker-desktop"
+            ;;
+        *)
+            echo "  Please install Docker from: https://docs.docker.com/get-docker/"
+            ;;
+    esac
+
+    echo ""
+    echo "After installing Docker, run this script again."
+    echo ""
+    exit 1
+}
+
+if ! check_docker; then
+    install_docker_instructions
+fi
+
+# Check for docker compose
+if docker compose version &> /dev/null; then
+    echo -e "  ${GREEN}✓${NC} Docker Compose (plugin) found"
+elif command -v docker-compose &> /dev/null; then
+    echo -e "  ${GREEN}✓${NC} Docker Compose (standalone) found"
+else
+    echo -e "  ${RED}✗${NC} Docker Compose not found"
+    echo ""
+    echo "Docker Compose is usually included with Docker Desktop."
+    echo "If using Linux, install with: sudo apt install docker-compose-plugin"
+    exit 1
+fi
+
+# ============================================
+# Step 2: Install/Configure Tailscale
+# ============================================
+echo ""
+echo -e "${CYAN}[2/5]${NC} Setting up Tailscale for remote access..."
+
+TAILSCALE_IP=""
+
+install_tailscale() {
+    case "$(uname -s)" in
+        Darwin)
+            if command -v brew &> /dev/null; then
+                echo -e "  Installing Tailscale via Homebrew..."
+                brew install --cask tailscale 2>/dev/null || true
+                echo -e "  ${YELLOW}⚠${NC} Please open Tailscale from Applications and sign in"
+                echo -e "  ${YELLOW}⚠${NC} Then run this script again"
+                exit 0
+            else
+                echo -e "  ${YELLOW}⚠${NC} Please install Tailscale manually:"
+                echo "    https://tailscale.com/download/mac"
+                exit 1
+            fi
+            ;;
+        Linux)
+            echo -e "  Installing Tailscale..."
+            curl -fsSL https://tailscale.com/install.sh | sh
+            echo -e "  ${GREEN}✓${NC} Tailscale installed"
+
+            # Start and enable tailscaled
+            if command -v systemctl &> /dev/null; then
+                sudo systemctl enable --now tailscaled 2>/dev/null || true
+            fi
+
+            # Check if already authenticated
+            if ! tailscale status &> /dev/null; then
+                echo ""
+                echo -e "  ${YELLOW}Please authenticate Tailscale:${NC}"
+                echo ""
+                sudo tailscale up
+                echo ""
+            fi
+            ;;
+        *)
+            echo -e "  ${YELLOW}⚠${NC} Please install Tailscale manually:"
+            echo "    https://tailscale.com/download"
+            ;;
+    esac
+}
+
+get_tailscale_ip() {
+    if command -v tailscale &> /dev/null; then
+        # Try to get Tailscale IP
+        TAILSCALE_IP=$(tailscale ip -4 2>/dev/null || echo "")
+        if [ -n "$TAILSCALE_IP" ]; then
+            echo -e "  ${GREEN}✓${NC} Tailscale IP: ${TAILSCALE_IP}"
+            return 0
+        fi
+    fi
+    return 1
+}
+
+if [ "$SKIP_TAILSCALE" = "true" ]; then
+    echo -e "  ${YELLOW}⚠${NC} Skipping Tailscale (SKIP_TAILSCALE=true)"
+else
+    if command -v tailscale &> /dev/null; then
+        echo -e "  ${GREEN}✓${NC} Tailscale found"
+
+        # Check if connected
+        if tailscale status &> /dev/null; then
+            get_tailscale_ip
+        else
+            echo -e "  ${YELLOW}⚠${NC} Tailscale not connected"
+            echo ""
+            echo -e "  ${CYAN}Starting Tailscale...${NC}"
+
+            case "$(uname -s)" in
+                Darwin)
+                    echo -e "  Please open Tailscale from menu bar and sign in"
+                    echo -e "  Then run this script again"
+                    echo ""
+                    read -p "  Press Enter after Tailscale is connected, or 's' to skip: " response
+                    if [ "$response" = "s" ] || [ "$response" = "S" ]; then
+                        echo -e "  ${YELLOW}⚠${NC} Skipping Tailscale - only local access available"
+                    else
+                        get_tailscale_ip
+                    fi
+                    ;;
+                Linux)
+                    sudo tailscale up
+                    get_tailscale_ip
+                    ;;
+            esac
+        fi
+    else
+        echo -e "  ${YELLOW}⚠${NC} Tailscale not installed"
+        echo ""
+        read -p "  Install Tailscale for remote access? (Y/n): " install_ts
+        if [ "$install_ts" != "n" ] && [ "$install_ts" != "N" ]; then
+            install_tailscale
+            get_tailscale_ip
+        else
+            echo -e "  ${YELLOW}⚠${NC} Skipping Tailscale - only local access available"
+        fi
+    fi
+fi
+
+# ============================================
+# Step 3: Create installation directory
+# ============================================
+echo ""
+echo -e "${CYAN}[3/5]${NC} Setting up installation directory..."
+
+mkdir -p "$INSTALL_DIR"
+cd "$INSTALL_DIR"
+
+echo -e "  ${GREEN}✓${NC} Created $INSTALL_DIR"
+
+# Create docker-compose.yml
+cat > docker-compose.yml << 'COMPOSE_EOF'
+version: '3.8'
+
+services:
+  couchdb:
+    image: couchdb:3.3
+    container_name: field-service-sync
+    restart: unless-stopped
+    ports:
+      - "${COUCH_PORT:-5984}:5984"
+    environment:
+      - COUCHDB_USER=${COUCH_USER:-admin}
+      - COUCHDB_PASSWORD=${COUCH_PASSWORD:-password}
+    volumes:
+      - couchdb_data:/opt/couchdb/data
+      - ./couchdb.ini:/opt/couchdb/etc/local.d/docker.ini:ro
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5984/_up"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  couchdb_data:
+COMPOSE_EOF
+
+echo -e "  ${GREEN}✓${NC} Created docker-compose.yml"
+
+# Create couchdb.ini for CORS support
+cat > couchdb.ini << 'INI_EOF'
+[chttpd]
+enable_cors = true
+bind_address = 0.0.0.0
+
+[cors]
+origins = *
+credentials = true
+methods = GET, PUT, POST, HEAD, DELETE
+headers = accept, authorization, content-type, origin, referer, x-csrf-token
+
+[chttpd_auth]
+require_valid_user = false
+
+[couchdb]
+single_node = true
+INI_EOF
+
+echo -e "  ${GREEN}✓${NC} Created couchdb.ini (CORS enabled)"
+
+# Create .env file for configuration
+cat > .env << ENV_EOF
+COUCH_USER=${COUCH_USER}
+COUCH_PASSWORD=${COUCH_PASSWORD}
+COUCH_PORT=${COUCH_PORT}
+ENV_EOF
+
+echo -e "  ${GREEN}✓${NC} Created .env configuration"
+
+# ============================================
+# Step 4: Start the server
+# ============================================
+echo ""
+echo -e "${CYAN}[4/5]${NC} Starting CouchDB server..."
+
+# Stop existing container if running
+if docker ps -a -q -f name=field-service-sync &> /dev/null; then
+    docker stop field-service-sync &> /dev/null 2>&1 || true
+    docker rm field-service-sync &> /dev/null 2>&1 || true
+fi
+
+# Start with docker compose
+docker compose up -d
+
+echo -e "  ${GREEN}✓${NC} CouchDB container started"
+echo -e "  ${GREEN}✓${NC} Auto-restart on boot enabled"
+
+# ============================================
+# Step 5: Initialize databases
+# ============================================
+echo ""
+echo -e "${CYAN}[5/5]${NC} Initializing databases..."
+
+# Wait for CouchDB to be ready
+echo -n "  Waiting for CouchDB"
+RETRIES=30
+until curl -s "http://localhost:${COUCH_PORT}/_up" > /dev/null 2>&1; do
+    echo -n "."
+    RETRIES=$((RETRIES - 1))
+    if [ $RETRIES -eq 0 ]; then
+        echo ""
+        echo -e "  ${RED}✗${NC} CouchDB failed to start"
+        echo "  Check logs with: docker logs field-service-sync"
+        exit 1
+    fi
+    sleep 1
+done
+echo " ready!"
+
+COUCH_URL="http://${COUCH_USER}:${COUCH_PASSWORD}@localhost:${COUCH_PORT}"
+
+# Create system databases
+curl -s -X PUT "$COUCH_URL/_users" > /dev/null 2>&1 || true
+curl -s -X PUT "$COUCH_URL/_replicator" > /dev/null 2>&1 || true
+curl -s -X PUT "$COUCH_URL/_global_changes" > /dev/null 2>&1 || true
+
+echo -e "  ${GREEN}✓${NC} System databases initialized"
+
+# ============================================
+# Complete!
+# ============================================
+echo ""
+echo -e "${GREEN}╔═══════════════════════════════════════════════════════════╗${NC}"
+echo -e "${GREEN}║              Installation Complete!                        ║${NC}"
+echo -e "${GREEN}╚═══════════════════════════════════════════════════════════╝${NC}"
+echo ""
+
+# Display URLs
+echo -e "${CYAN}Sync Server URLs:${NC}"
+echo ""
+echo -e "  ${YELLOW}Local:${NC}    http://localhost:${COUCH_PORT}"
+
+if [ -n "$TAILSCALE_IP" ]; then
+    echo -e "  ${YELLOW}Remote:${NC}   http://${TAILSCALE_IP}:${COUCH_PORT}  ${GREEN}← Use this for team access${NC}"
+    echo ""
+    echo -e "  ${PURPLE}Share the Remote URL with your team members.${NC}"
+    echo -e "  ${PURPLE}They need Tailscale installed and joined to your network.${NC}"
+else
+    echo ""
+    echo -e "  ${YELLOW}⚠ No Tailscale IP - only local access available${NC}"
+    echo -e "  Run 'tailscale up' to enable remote access"
+fi
+
+echo ""
+echo -e "${CYAN}Admin Dashboard:${NC}"
+echo -e "  http://localhost:${COUCH_PORT}/_utils"
+echo -e "  Username: ${COUCH_USER}"
+echo -e "  Password: ${COUCH_PASSWORD}"
+
+echo ""
+echo -e "${CYAN}Installation Directory:${NC}"
+echo -e "  ${INSTALL_DIR}"
+
+echo ""
+echo -e "${CYAN}Useful Commands:${NC}"
+echo -e "  Stop server:    ${BLUE}cd ${INSTALL_DIR} && docker compose down${NC}"
+echo -e "  Start server:   ${BLUE}cd ${INSTALL_DIR} && docker compose up -d${NC}"
+echo -e "  View logs:      ${BLUE}docker logs -f field-service-sync${NC}"
+echo -e "  Tailscale IP:   ${BLUE}tailscale ip -4${NC}"
+
+echo ""
+echo -e "${CYAN}Uninstall:${NC}"
+echo -e "  ${BLUE}cd ${INSTALL_DIR} && docker compose down -v && rm -rf ${INSTALL_DIR}${NC}"
+
+echo ""
+if [ -n "$TAILSCALE_IP" ]; then
+    echo -e "${PURPLE}Copy this URL into the wizard:${NC} ${YELLOW}http://${TAILSCALE_IP}:${COUCH_PORT}${NC}"
+else
+    echo -e "${PURPLE}Copy this URL into the wizard:${NC} ${YELLOW}http://localhost:${COUCH_PORT}${NC}"
+fi
+echo ""
+
+# Save connection info to a file for easy reference
+cat > "$INSTALL_DIR/connection-info.txt" << INFO_EOF
+Field Service Sync Server
+=========================
+
+Local URL:  http://localhost:${COUCH_PORT}
+Remote URL: http://${TAILSCALE_IP:-<run 'tailscale ip -4'>}:${COUCH_PORT}
+
+Admin Dashboard: http://localhost:${COUCH_PORT}/_utils
+Username: ${COUCH_USER}
+Password: ${COUCH_PASSWORD}
+
+To get Tailscale IP: tailscale ip -4
+To check status: tailscale status
+INFO_EOF
+
+echo -e "${GREEN}Connection info saved to: ${INSTALL_DIR}/connection-info.txt${NC}"
+echo ""

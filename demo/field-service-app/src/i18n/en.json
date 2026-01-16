@@ -1,0 +1,106 @@
+{
+  "app": {
+    "title": "Field Service",
+    "subtitle": "Work Order Management"
+  },
+  "status": {
+    "online": "Online",
+    "offline": "Offline",
+    "syncing": "Syncing...",
+    "synced": "All changes synced",
+    "pending": "{{count}} pending change",
+    "pending_plural": "{{count}} pending changes"
+  },
+  "nav": {
+    "dashboard": "Dashboard",
+    "workOrders": "Complete Work Orders",
+    "equipment": "Track Equipment",
+    "settings": "Settings",
+    "assign": "Assign Work Orders",
+    "monitorProgress": "Monitor Progress",
+    "reports": "Generate Reports",
+    "team": "Team Performance"
+  },
+  "workOrder": {
+    "title": "Work Orders",
+    "new": "New",
+    "assigned": "Assigned",
+    "inProgress": "In Progress",
+    "awaitingParts": "Awaiting Parts",
+    "complete": "Complete",
+    "priority": {
+      "low": "Low",
+      "medium": "Medium",
+      "high": "High",
+      "critical": "Critical"
+    },
+    "fields": {
+      "title": "Title",
+      "description": "Description",
+      "status": "Status",
+      "priority": "Priority",
+      "assignedTo": "Assigned To",
+      "dueDate": "Due Date",
+      "location": "Location",
+      "equipmentSerial": "Equipment Serial #",
+      "safetyChecklist": "Safety Checklist Completed",
+      "customerSatisfaction": "Customer Satisfaction",
+      "notes": "Work Notes",
+      "photos": "Site Photos"
+    },
+    "actions": {
+      "start": "Start Work",
+      "complete": "Mark Complete",
+      "save": "Save Changes",
+      "addNote": "Add Note",
+      "capturePhoto": "Capture Site Photo"
+    },
+    "checklist": {
+      "title": "Service Checklist",
+      "items": {
+        "inspect": "Initial Inspection",
+        "diagnose": "Diagnose Issue",
+        "repair": "Perform Repair",
+        "test": "Test System",
+        "cleanup": "Clean Work Area"
+      }
+    }
+  },
+  "equipment": {
+    "title": "Equipment",
+    "search": "Search equipment...",
+    "fields": {
+      "name": "Name",
+      "serialNumber": "Serial Number",
+      "manufacturer": "Manufacturer",
+      "installDate": "Install Date",
+      "lastService": "Last Service"
+    },
+    "scanner": {
+      "title": "Scan Equipment Barcode",
+      "button": "Scan",
+      "instruction": "Position barcode within frame",
+      "scanning": "Scanning...",
+      "scan": "Scan Barcode"
+    }
+  },
+  "settings": {
+    "title": "Settings",
+    "language": "Language",
+    "sync": "Sync Settings",
+    "syncUrl": "Sync Server URL",
+    "clearData": "Clear Local Data",
+    "about": "About"
+  },
+  "map": {
+    "title": "View Map",
+    "legend": "Legend",
+    "techActive": "Technician (Active)",
+    "techOnBreak": "Technician (On Break)",
+    "highPriority": "High Priority Order",
+    "medPriority": "Medium Priority Order",
+    "onBreak": "On Break",
+    "active": "Active",
+    "break": "Break"
+  }
+}
