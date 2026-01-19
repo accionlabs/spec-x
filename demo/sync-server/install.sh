@@ -302,6 +302,28 @@ cd "$INSTALL_DIR"
 
 echo -e "  ${GREEN}✓${NC} Created $INSTALL_DIR"
 
+# Create local.ini config file with required settings
+mkdir -p config
+cat > config/local.ini << 'CONFIG_EOF'
+[couchdb]
+single_node = true
+
+[chttpd]
+enable_cors = true
+bind_address = 0.0.0.0
+
+[chttpd_auth]
+require_valid_user = false
+
+[cors]
+origins = *
+credentials = true
+methods = GET, PUT, POST, HEAD, DELETE
+headers = accept, authorization, content-type, origin, referer, x-csrf-token
+CONFIG_EOF
+
+echo -e "  ${GREEN}✓${NC} Created config/local.ini"
+
 # Create docker-compose.yml (works with both podman-compose and docker-compose)
 cat > docker-compose.yml << 'COMPOSE_EOF'
 services:
@@ -316,6 +338,7 @@ services:
       - COUCHDB_PASSWORD=${COUCH_PASSWORD:-password}
     volumes:
       - couchdb_data:/opt/couchdb/data
+      - ./config:/opt/couchdb/etc/local.d
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:5984/_up"]
       interval: 10s
@@ -377,21 +400,8 @@ echo " ready!"
 
 COUCH_URL="http://${COUCH_USER}:${COUCH_PASSWORD}@localhost:${COUCH_PORT}"
 
-# Configure CORS via API
-echo -e "  Configuring CORS..."
-curl -s -X PUT "$COUCH_URL/_node/_local/_config/chttpd/enable_cors" -d '"true"' > /dev/null 2>&1 || true
-curl -s -X PUT "$COUCH_URL/_node/_local/_config/cors/origins" -d '"*"' > /dev/null 2>&1 || true
-curl -s -X PUT "$COUCH_URL/_node/_local/_config/cors/credentials" -d '"true"' > /dev/null 2>&1 || true
-curl -s -X PUT "$COUCH_URL/_node/_local/_config/cors/methods" -d '"GET, PUT, POST, HEAD, DELETE"' > /dev/null 2>&1 || true
-curl -s -X PUT "$COUCH_URL/_node/_local/_config/cors/headers" -d '"accept, authorization, content-type, origin, referer, x-csrf-token"' > /dev/null 2>&1 || true
-echo -e "  ${GREEN}✓${NC} CORS enabled"
-
-# Allow anonymous access (no authentication required for database operations)
-echo -e "  Configuring access..."
-curl -s -X PUT "$COUCH_URL/_node/_local/_config/chttpd_auth/require_valid_user" -d '"false"' > /dev/null 2>&1 || true
-curl -s -X PUT "$COUCH_URL/_node/_local/_config/chttpd_auth/authentication_redirect" -d '"/_utils/session.html"' > /dev/null 2>&1 || true
-curl -s -X PUT "$COUCH_URL/_node/_local/_config/couchdb/single_node" -d '"true"' > /dev/null 2>&1 || true
-echo -e "  ${GREEN}✓${NC} Anonymous access enabled"
+# Config is loaded from mounted config/local.ini file
+echo -e "  ${GREEN}✓${NC} CORS and anonymous access configured via local.ini"
 
 # Create system databases
 curl -s -X PUT "$COUCH_URL/_users" > /dev/null 2>&1 || true
