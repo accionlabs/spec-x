@@ -316,7 +316,6 @@ services:
       - COUCHDB_PASSWORD=${COUCH_PASSWORD:-password}
     volumes:
       - couchdb_data:/opt/couchdb/data
-      - ./couchdb.ini:/opt/couchdb/etc/local.d/docker.ini
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:5984/_up"]
       interval: 10s
@@ -328,27 +327,6 @@ volumes:
 COMPOSE_EOF
 
 echo -e "  ${GREEN}✓${NC} Created docker-compose.yml"
-
-# Create couchdb.ini for CORS support
-cat > couchdb.ini << 'INI_EOF'
-[chttpd]
-enable_cors = true
-bind_address = 0.0.0.0
-
-[cors]
-origins = *
-credentials = true
-methods = GET, PUT, POST, HEAD, DELETE
-headers = accept, authorization, content-type, origin, referer, x-csrf-token
-
-[chttpd_auth]
-require_valid_user = false
-
-[couchdb]
-single_node = true
-INI_EOF
-
-echo -e "  ${GREEN}✓${NC} Created couchdb.ini (CORS enabled)"
 
 # Create .env file for configuration
 cat > .env << ENV_EOF
@@ -398,6 +376,15 @@ done
 echo " ready!"
 
 COUCH_URL="http://${COUCH_USER}:${COUCH_PASSWORD}@localhost:${COUCH_PORT}"
+
+# Configure CORS via API
+echo -e "  Configuring CORS..."
+curl -s -X PUT "$COUCH_URL/_node/_local/_config/chttpd/enable_cors" -d '"true"' > /dev/null 2>&1 || true
+curl -s -X PUT "$COUCH_URL/_node/_local/_config/cors/origins" -d '"*"' > /dev/null 2>&1 || true
+curl -s -X PUT "$COUCH_URL/_node/_local/_config/cors/credentials" -d '"true"' > /dev/null 2>&1 || true
+curl -s -X PUT "$COUCH_URL/_node/_local/_config/cors/methods" -d '"GET, PUT, POST, HEAD, DELETE"' > /dev/null 2>&1 || true
+curl -s -X PUT "$COUCH_URL/_node/_local/_config/cors/headers" -d '"accept, authorization, content-type, origin, referer, x-csrf-token"' > /dev/null 2>&1 || true
+echo -e "  ${GREEN}✓${NC} CORS enabled"
 
 # Create system databases
 curl -s -X PUT "$COUCH_URL/_users" > /dev/null 2>&1 || true
