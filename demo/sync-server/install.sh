@@ -4,8 +4,8 @@
 # Usage: curl -sL <url>/install.sh | bash
 #
 # This script will:
-# 1. Check for Docker (and help install if missing)
-# 2. Install Tailscale for public IP access
+# 1. Check for Podman or Docker (prefers Podman - fully open source)
+# 2. Install Tailscale for remote access
 # 3. Create sync-server directory with all config files
 # 4. Start CouchDB container with auto-restart
 # 5. Initialize databases for sync
@@ -28,6 +28,10 @@ COUCH_PASSWORD="${COUCH_PASSWORD:-password}"
 COUCH_PORT="${COUCH_PORT:-5984}"
 SKIP_TAILSCALE="${SKIP_TAILSCALE:-false}"
 
+# Container runtime (will be set to 'podman' or 'docker')
+CONTAINER_CMD=""
+COMPOSE_CMD=""
+
 echo ""
 echo -e "${PURPLE}╔═══════════════════════════════════════════════════════════╗${NC}"
 echo -e "${PURPLE}║         Field Service Sync Server Installer               ║${NC}"
@@ -35,9 +39,19 @@ echo -e "${PURPLE}╚═══════════════════�
 echo ""
 
 # ============================================
-# Step 1: Check for Docker
+# Step 1: Check for Podman or Docker
 # ============================================
-echo -e "${CYAN}[1/5]${NC} Checking Docker..."
+echo -e "${CYAN}[1/5]${NC} Checking container runtime..."
+
+check_podman() {
+    if command -v podman &> /dev/null; then
+        PODMAN_VERSION=$(podman --version | cut -d' ' -f3)
+        echo -e "  ${GREEN}✓${NC} Podman ${PODMAN_VERSION} found (open source)"
+        CONTAINER_CMD="podman"
+        return 0
+    fi
+    return 1
+}
 
 check_docker() {
     if command -v docker &> /dev/null; then
@@ -47,82 +61,114 @@ check_docker() {
         # Check if Docker daemon is running
         if ! docker info &> /dev/null; then
             echo -e "  ${YELLOW}⚠${NC} Docker is installed but not running"
-            echo ""
-            echo -e "${YELLOW}Please start Docker and run this script again.${NC}"
-            echo ""
-
-            # Platform-specific instructions
-            case "$(uname -s)" in
-                Darwin)
-                    echo "  On macOS: Open Docker Desktop from Applications"
-                    ;;
-                Linux)
-                    echo "  On Linux: sudo systemctl start docker"
-                    ;;
-            esac
-            echo ""
-            exit 1
+            return 1
         fi
+        CONTAINER_CMD="docker"
         return 0
-    else
-        return 1
     fi
+    return 1
 }
 
-install_docker_instructions() {
-    echo -e "  ${RED}✗${NC} Docker not found"
+check_compose() {
+    if [ "$CONTAINER_CMD" = "podman" ]; then
+        # Check for podman-compose or podman compose
+        if podman compose version &> /dev/null 2>&1; then
+            COMPOSE_CMD="podman compose"
+            echo -e "  ${GREEN}✓${NC} Podman Compose found"
+            return 0
+        elif command -v podman-compose &> /dev/null; then
+            COMPOSE_CMD="podman-compose"
+            echo -e "  ${GREEN}✓${NC} podman-compose found"
+            return 0
+        fi
+    else
+        # Check for docker compose
+        if docker compose version &> /dev/null 2>&1; then
+            COMPOSE_CMD="docker compose"
+            echo -e "  ${GREEN}✓${NC} Docker Compose found"
+            return 0
+        elif command -v docker-compose &> /dev/null; then
+            COMPOSE_CMD="docker-compose"
+            echo -e "  ${GREEN}✓${NC} docker-compose found"
+            return 0
+        fi
+    fi
+    return 1
+}
+
+install_instructions() {
+    echo -e "  ${RED}✗${NC} No container runtime found"
     echo ""
-    echo -e "${YELLOW}Docker is required. Please install Docker first:${NC}"
+    echo -e "${YELLOW}A container runtime is required. We recommend Podman (fully open source):${NC}"
     echo ""
 
     case "$(uname -s)" in
         Darwin)
-            echo -e "${CYAN}macOS:${NC}"
-            echo "  Option 1 (Recommended): Download Docker Desktop"
-            echo "    https://www.docker.com/products/docker-desktop"
+            echo -e "${CYAN}macOS - Install Podman:${NC}"
+            echo "  brew install podman podman-compose"
+            echo "  podman machine init"
+            echo "  podman machine start"
             echo ""
-            echo "  Option 2: Using Homebrew"
-            echo "    brew install --cask docker"
+            echo -e "${CYAN}Alternative - Docker Desktop:${NC}"
+            echo "  brew install --cask docker"
+            echo "  (Note: Docker Desktop has licensing requirements for large organizations)"
             ;;
         Linux)
-            echo -e "${CYAN}Linux:${NC}"
-            echo "  # Ubuntu/Debian:"
-            echo "  curl -fsSL https://get.docker.com | sh"
-            echo "  sudo usermod -aG docker \$USER"
+            echo -e "${CYAN}Linux - Install Podman:${NC}"
             echo ""
-            echo "  # Then log out and back in, or run:"
-            echo "  newgrp docker"
+            echo "  # Ubuntu/Debian:"
+            echo "  sudo apt update && sudo apt install -y podman podman-compose"
+            echo ""
+            echo "  # Fedora/RHEL/CentOS:"
+            echo "  sudo dnf install -y podman podman-compose"
+            echo ""
+            echo "  # Arch:"
+            echo "  sudo pacman -S podman podman-compose"
+            echo ""
+            echo -e "${CYAN}Alternative - Docker:${NC}"
+            echo "  curl -fsSL https://get.docker.com | sh"
+            echo "  sudo usermod -aG docker \$USER && newgrp docker"
             ;;
         MINGW*|CYGWIN*|MSYS*)
             echo -e "${CYAN}Windows:${NC}"
-            echo "  Download Docker Desktop from:"
-            echo "    https://www.docker.com/products/docker-desktop"
+            echo "  Download Podman Desktop from: https://podman-desktop.io/"
+            echo "  Or Docker Desktop from: https://www.docker.com/products/docker-desktop"
             ;;
         *)
-            echo "  Please install Docker from: https://docs.docker.com/get-docker/"
+            echo "  Podman: https://podman.io/docs/installation"
+            echo "  Docker: https://docs.docker.com/get-docker/"
             ;;
     esac
 
     echo ""
-    echo "After installing Docker, run this script again."
+    echo "After installation, run this script again."
     echo ""
     exit 1
 }
 
-if ! check_docker; then
-    install_docker_instructions
+# Try Podman first (preferred - fully open source)
+if check_podman; then
+    echo -e "  ${PURPLE}Using Podman (recommended - Apache 2.0 license)${NC}"
+elif check_docker; then
+    echo -e "  ${YELLOW}Note: Consider switching to Podman for a fully open source solution${NC}"
+else
+    install_instructions
 fi
 
-# Check for docker compose
-if docker compose version &> /dev/null; then
-    echo -e "  ${GREEN}✓${NC} Docker Compose (plugin) found"
-elif command -v docker-compose &> /dev/null; then
-    echo -e "  ${GREEN}✓${NC} Docker Compose (standalone) found"
-else
-    echo -e "  ${RED}✗${NC} Docker Compose not found"
+# Check for compose support
+if ! check_compose; then
+    echo -e "  ${RED}✗${NC} Compose not found"
     echo ""
-    echo "Docker Compose is usually included with Docker Desktop."
-    echo "If using Linux, install with: sudo apt install docker-compose-plugin"
+    if [ "$CONTAINER_CMD" = "podman" ]; then
+        echo "Please install podman-compose:"
+        echo "  pip install podman-compose"
+        echo "  # or"
+        echo "  brew install podman-compose  (macOS)"
+        echo "  apt install podman-compose   (Debian/Ubuntu)"
+    else
+        echo "Please install Docker Compose:"
+        echo "  sudo apt install docker-compose-plugin"
+    fi
     exit 1
 fi
 
@@ -243,7 +289,7 @@ cd "$INSTALL_DIR"
 
 echo -e "  ${GREEN}✓${NC} Created $INSTALL_DIR"
 
-# Create docker-compose.yml
+# Create docker-compose.yml (works with both podman-compose and docker-compose)
 cat > docker-compose.yml << 'COMPOSE_EOF'
 version: '3.8'
 
@@ -309,15 +355,13 @@ echo ""
 echo -e "${CYAN}[4/5]${NC} Starting CouchDB server..."
 
 # Stop existing container if running
-if docker ps -a -q -f name=field-service-sync &> /dev/null; then
-    docker stop field-service-sync &> /dev/null 2>&1 || true
-    docker rm field-service-sync &> /dev/null 2>&1 || true
-fi
+$CONTAINER_CMD stop field-service-sync &> /dev/null 2>&1 || true
+$CONTAINER_CMD rm field-service-sync &> /dev/null 2>&1 || true
 
-# Start with docker compose
-docker compose up -d
+# Start with compose
+$COMPOSE_CMD up -d
 
-echo -e "  ${GREEN}✓${NC} CouchDB container started"
+echo -e "  ${GREEN}✓${NC} CouchDB container started with ${CONTAINER_CMD}"
 echo -e "  ${GREEN}✓${NC} Auto-restart on boot enabled"
 
 # ============================================
@@ -335,7 +379,7 @@ until curl -s "http://localhost:${COUCH_PORT}/_up" > /dev/null 2>&1; do
     if [ $RETRIES -eq 0 ]; then
         echo ""
         echo -e "  ${RED}✗${NC} CouchDB failed to start"
-        echo "  Check logs with: docker logs field-service-sync"
+        echo "  Check logs with: $CONTAINER_CMD logs field-service-sync"
         exit 1
     fi
     sleep 1
@@ -358,6 +402,10 @@ echo ""
 echo -e "${GREEN}╔═══════════════════════════════════════════════════════════╗${NC}"
 echo -e "${GREEN}║              Installation Complete!                        ║${NC}"
 echo -e "${GREEN}╚═══════════════════════════════════════════════════════════╝${NC}"
+echo ""
+
+# Display container runtime info
+echo -e "${CYAN}Container Runtime:${NC} ${CONTAINER_CMD} (${COMPOSE_CMD})"
 echo ""
 
 # Display URLs
@@ -388,14 +436,14 @@ echo -e "  ${INSTALL_DIR}"
 
 echo ""
 echo -e "${CYAN}Useful Commands:${NC}"
-echo -e "  Stop server:    ${BLUE}cd ${INSTALL_DIR} && docker compose down${NC}"
-echo -e "  Start server:   ${BLUE}cd ${INSTALL_DIR} && docker compose up -d${NC}"
-echo -e "  View logs:      ${BLUE}docker logs -f field-service-sync${NC}"
+echo -e "  Stop server:    ${BLUE}cd ${INSTALL_DIR} && ${COMPOSE_CMD} down${NC}"
+echo -e "  Start server:   ${BLUE}cd ${INSTALL_DIR} && ${COMPOSE_CMD} up -d${NC}"
+echo -e "  View logs:      ${BLUE}${CONTAINER_CMD} logs -f field-service-sync${NC}"
 echo -e "  Tailscale IP:   ${BLUE}tailscale ip -4${NC}"
 
 echo ""
 echo -e "${CYAN}Uninstall:${NC}"
-echo -e "  ${BLUE}cd ${INSTALL_DIR} && docker compose down -v && rm -rf ${INSTALL_DIR}${NC}"
+echo -e "  ${BLUE}cd ${INSTALL_DIR} && ${COMPOSE_CMD} down -v && rm -rf ${INSTALL_DIR}${NC}"
 
 echo ""
 if [ -n "$TAILSCALE_IP" ]; then
@@ -410,6 +458,8 @@ cat > "$INSTALL_DIR/connection-info.txt" << INFO_EOF
 Field Service Sync Server
 =========================
 
+Container Runtime: ${CONTAINER_CMD}
+
 Local URL:  http://localhost:${COUCH_PORT}
 Remote URL: http://${TAILSCALE_IP:-<run 'tailscale ip -4'>}:${COUCH_PORT}
 
@@ -419,6 +469,11 @@ Password: ${COUCH_PASSWORD}
 
 To get Tailscale IP: tailscale ip -4
 To check status: tailscale status
+
+Commands:
+  Stop:  cd ${INSTALL_DIR} && ${COMPOSE_CMD} down
+  Start: cd ${INSTALL_DIR} && ${COMPOSE_CMD} up -d
+  Logs:  ${CONTAINER_CMD} logs -f field-service-sync
 INFO_EOF
 
 echo -e "${GREEN}Connection info saved to: ${INSTALL_DIR}/connection-info.txt${NC}"

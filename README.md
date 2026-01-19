@@ -76,7 +76,7 @@ CouchDB-based sync server for team collaboration:
 ### Prerequisites
 - Node.js 18+
 - npm or yarn
-- Docker (for sync server)
+- Podman or Docker (for sync server) - Podman recommended (fully open source)
 
 ### Installation
 
@@ -120,7 +120,7 @@ curl -sL https://raw.githubusercontent.com/accionlabs/spec-x/main/demo/sync-serv
 ```
 
 This will:
-1. Check for Docker (with install instructions if missing)
+1. Check for Podman or Docker (prefers Podman - fully open source)
 2. Set up Tailscale for remote access (no public IP needed)
 3. Set up CouchDB with CORS enabled
 4. Configure auto-restart on system boot
