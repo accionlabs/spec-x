@@ -386,6 +386,13 @@ curl -s -X PUT "$COUCH_URL/_node/_local/_config/cors/methods" -d '"GET, PUT, POS
 curl -s -X PUT "$COUCH_URL/_node/_local/_config/cors/headers" -d '"accept, authorization, content-type, origin, referer, x-csrf-token"' > /dev/null 2>&1 || true
 echo -e "  ${GREEN}✓${NC} CORS enabled"
 
+# Allow anonymous access (no authentication required for database operations)
+echo -e "  Configuring access..."
+curl -s -X PUT "$COUCH_URL/_node/_local/_config/chttpd_auth/require_valid_user" -d '"false"' > /dev/null 2>&1 || true
+curl -s -X PUT "$COUCH_URL/_node/_local/_config/chttpd_auth/authentication_redirect" -d '"/_utils/session.html"' > /dev/null 2>&1 || true
+curl -s -X PUT "$COUCH_URL/_node/_local/_config/couchdb/single_node" -d '"true"' > /dev/null 2>&1 || true
+echo -e "  ${GREEN}✓${NC} Anonymous access enabled"
+
 # Create system databases
 curl -s -X PUT "$COUCH_URL/_users" > /dev/null 2>&1 || true
 curl -s -X PUT "$COUCH_URL/_replicator" > /dev/null 2>&1 || true
