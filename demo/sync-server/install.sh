@@ -32,6 +32,12 @@ SKIP_TAILSCALE="${SKIP_TAILSCALE:-false}"
 CONTAINER_CMD=""
 COMPOSE_CMD=""
 
+# Detect if running interactively (not via pipe)
+IS_INTERACTIVE=false
+if [ -t 0 ]; then
+    IS_INTERACTIVE=true
+fi
+
 echo ""
 echo -e "${PURPLE}╔═══════════════════════════════════════════════════════════╗${NC}"
 echo -e "${PURPLE}║         Field Service Sync Server Installer               ║${NC}"
@@ -241,39 +247,46 @@ else
 
         # Check if connected
         if tailscale status &> /dev/null; then
-            get_tailscale_ip
+            get_tailscale_ip || true
         else
             echo -e "  ${YELLOW}⚠${NC} Tailscale not connected"
-            echo ""
-            echo -e "  ${CYAN}Starting Tailscale...${NC}"
+            if [ "$IS_INTERACTIVE" = "true" ]; then
+                echo ""
+                echo -e "  ${CYAN}Starting Tailscale...${NC}"
 
-            case "$(uname -s)" in
-                Darwin)
-                    echo -e "  Please open Tailscale from menu bar and sign in"
-                    echo -e "  Then run this script again"
-                    echo ""
-                    read -p "  Press Enter after Tailscale is connected, or 's' to skip: " response
-                    if [ "$response" = "s" ] || [ "$response" = "S" ]; then
-                        echo -e "  ${YELLOW}⚠${NC} Skipping Tailscale - only local access available"
-                    else
-                        get_tailscale_ip
-                    fi
-                    ;;
-                Linux)
-                    sudo tailscale up
-                    get_tailscale_ip
-                    ;;
-            esac
+                case "$(uname -s)" in
+                    Darwin)
+                        echo -e "  Please open Tailscale from menu bar and sign in"
+                        echo ""
+                        read -p "  Press Enter after Tailscale is connected, or 's' to skip: " response
+                        if [ "$response" = "s" ] || [ "$response" = "S" ]; then
+                            echo -e "  ${YELLOW}⚠${NC} Skipping Tailscale - only local access available"
+                        else
+                            get_tailscale_ip || true
+                        fi
+                        ;;
+                    Linux)
+                        sudo tailscale up || true
+                        get_tailscale_ip || true
+                        ;;
+                esac
+            else
+                echo -e "  ${YELLOW}⚠${NC} Run 'tailscale up' manually after installation for remote access"
+            fi
         fi
     else
         echo -e "  ${YELLOW}⚠${NC} Tailscale not installed"
-        echo ""
-        read -p "  Install Tailscale for remote access? (Y/n): " install_ts
-        if [ "$install_ts" != "n" ] && [ "$install_ts" != "N" ]; then
-            install_tailscale
-            get_tailscale_ip
+        if [ "$IS_INTERACTIVE" = "true" ]; then
+            echo ""
+            read -p "  Install Tailscale for remote access? (Y/n): " install_ts
+            if [ "$install_ts" != "n" ] && [ "$install_ts" != "N" ]; then
+                install_tailscale
+                get_tailscale_ip || true
+            else
+                echo -e "  ${YELLOW}⚠${NC} Skipping Tailscale - only local access available"
+            fi
         else
-            echo -e "  ${YELLOW}⚠${NC} Skipping Tailscale - only local access available"
+            echo -e "  ${YELLOW}⚠${NC} Install Tailscale manually for remote access: https://tailscale.com/download"
         fi
     fi
 fi
