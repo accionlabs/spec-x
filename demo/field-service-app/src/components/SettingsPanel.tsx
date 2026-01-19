@@ -1,7 +1,7 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Globe, Database, Server, Trash2, Info, Check, WifiOff } from 'lucide-react'
-import { useEnabledLanguages } from '../config'
+import { Globe, Database, Server, Trash2, Info, Check, WifiOff, Wifi, Loader2, CheckCircle, XCircle } from 'lucide-react'
+import { useEnabledLanguages, useConstraints, useConfig } from '../config'
 
 // All supported languages with metadata
 const ALL_LANGUAGES = [
@@ -17,9 +17,75 @@ interface SettingsPanelProps {
 
 export default function SettingsPanel({ onLanguageChange, currentLanguage }: SettingsPanelProps) {
   const { t } = useTranslation()
+  const { configName, refreshConfig } = useConfig()
+  const constraints = useConstraints()
   const [syncUrl, setSyncUrl] = useState('')
+  const [syncStatus, setSyncStatus] = useState<'idle' | 'testing' | 'success' | 'error'>('idle')
+  const [syncError, setSyncError] = useState<string | null>(null)
   const [showClearConfirm, setShowClearConfirm] = useState(false)
   const enabledLanguages = useEnabledLanguages()
+
+  // Initialize syncUrl from config
+  useEffect(() => {
+    if (constraints.syncUrl) {
+      setSyncUrl(constraints.syncUrl)
+    }
+  }, [constraints.syncUrl])
+
+  // Test and save sync connection
+  const testAndSaveSyncUrl = async () => {
+    if (!syncUrl) return
+
+    setSyncStatus('testing')
+    setSyncError(null)
+
+    try {
+      const response = await fetch(`${syncUrl}/_up`, {
+        method: 'GET',
+        mode: 'cors',
+      })
+
+      if (response.ok) {
+        setSyncStatus('success')
+        // Save to config server
+        await saveSyncUrl(syncUrl)
+      } else {
+        setSyncStatus('error')
+        setSyncError(`Server returned ${response.status}`)
+      }
+    } catch (err) {
+      setSyncStatus('error')
+      setSyncError('Could not connect to server')
+    }
+  }
+
+  // Save sync URL to config
+  const saveSyncUrl = async (url: string) => {
+    if (!configName) return
+
+    try {
+      const response = await fetch(`http://localhost:3002/config/${configName}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          constraints: {
+            ...constraints,
+            syncUrl: url
+          }
+        })
+      })
+      if (response.ok) {
+        await refreshConfig()
+        // Reload page to reinitialize sync
+        setTimeout(() => window.location.reload(), 1000)
+      }
+    } catch (err) {
+      console.error('Failed to save sync URL:', err)
+    }
+  }
+
+  // Check if syncUrl has changed from config
+  const hasUnsavedChanges = syncUrl !== (constraints.syncUrl || '')
 
   // Filter to only show enabled languages
   const availableLanguages = useMemo(() => {
@@ -82,12 +148,18 @@ export default function SettingsPanel({ onLanguageChange, currentLanguage }: Set
       {/* Sync Settings */}
       <div className="bg-white rounded-xl shadow-sm p-4">
         <div className="flex items-center gap-3 mb-4">
-          <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center">
-            <Server className="w-5 h-5 text-purple-600" />
+          <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${constraints.syncUrl ? 'bg-green-100' : 'bg-purple-100'}`}>
+            {constraints.syncUrl ? (
+              <Wifi className="w-5 h-5 text-green-600" />
+            ) : (
+              <Server className="w-5 h-5 text-purple-600" />
+            )}
           </div>
           <div>
             <h3 className="font-medium text-gray-900">{t('settings.sync')}</h3>
-            <p className="text-sm text-gray-500">Configure remote sync server</p>
+            <p className="text-sm text-gray-500">
+              {constraints.syncUrl ? 'Connected to sync server' : 'Configure remote sync server'}
+            </p>
           </div>
         </div>
 
@@ -96,24 +168,72 @@ export default function SettingsPanel({ onLanguageChange, currentLanguage }: Set
             <label className="text-sm font-medium text-gray-700 block mb-1">
               {t('settings.syncUrl')}
             </label>
-            <input
-              type="url"
-              value={syncUrl}
-              onChange={(e) => setSyncUrl(e.target.value)}
-              placeholder="https://couchdb.example.com/field-service"
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 text-sm"
-            />
+            <div className="flex gap-2">
+              <div className="flex-1 relative">
+                <input
+                  type="url"
+                  value={syncUrl}
+                  onChange={(e) => {
+                    setSyncUrl(e.target.value)
+                    setSyncStatus('idle')
+                  }}
+                  placeholder="http://localhost:5984"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 text-sm"
+                />
+                {syncStatus === 'success' && (
+                  <CheckCircle className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-green-500" />
+                )}
+                {syncStatus === 'error' && (
+                  <XCircle className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-red-500" />
+                )}
+              </div>
+              <button
+                onClick={testAndSaveSyncUrl}
+                disabled={!syncUrl || syncStatus === 'testing' || !hasUnsavedChanges}
+                className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-sm font-medium flex items-center gap-2"
+              >
+                {syncStatus === 'testing' ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  'Save'
+                )}
+              </button>
+            </div>
+            {syncStatus === 'success' && (
+              <p className="mt-2 text-sm text-green-600 flex items-center gap-1">
+                <CheckCircle className="w-4 h-4" />
+                Connected! Reloading...
+              </p>
+            )}
+            {syncStatus === 'error' && syncError && (
+              <p className="mt-2 text-sm text-red-600 flex items-center gap-1">
+                <XCircle className="w-4 h-4" />
+                {syncError}
+              </p>
+            )}
           </div>
 
-          <div className="flex items-start gap-2 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-            <WifiOff className="w-4 h-4 text-blue-600 mt-0.5 flex-shrink-0" />
-            <div className="text-sm text-blue-700">
-              <strong>Individual Mode:</strong> Works fully offline with local storage.
-              <p className="mt-1 text-xs opacity-80">
-                Add a sync server to enable team collaboration, dispatcher assignment, and manager oversight.
-              </p>
+          {constraints.syncUrl ? (
+            <div className="flex items-start gap-2 p-3 bg-green-50 border border-green-200 rounded-lg">
+              <Wifi className="w-4 h-4 text-green-600 mt-0.5 flex-shrink-0" />
+              <div className="text-sm text-green-700">
+                <strong>Team Mode:</strong> Data syncs with server for collaboration.
+                <p className="mt-1 text-xs opacity-80">
+                  Work orders and equipment are synced between all team members.
+                </p>
+              </div>
             </div>
-          </div>
+          ) : (
+            <div className="flex items-start gap-2 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+              <WifiOff className="w-4 h-4 text-blue-600 mt-0.5 flex-shrink-0" />
+              <div className="text-sm text-blue-700">
+                <strong>Local Mode:</strong> Works fully offline with local storage.
+                <p className="mt-1 text-xs opacity-80">
+                  Add a sync server to enable team collaboration.
+                </p>
+              </div>
+            </div>
+          )}
         </div>
       </div>
 

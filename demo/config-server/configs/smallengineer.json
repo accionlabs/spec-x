@@ -1,6 +1,6 @@
 {
-  "version": "1768805315849",
-  "generatedAt": "2026-01-19T06:48:35.849Z",
+  "version": "1768819028983",
+  "generatedAt": "2026-01-19T10:37:08.983Z",
   "features": {
     "personas": [
       "technician",
@@ -70,7 +70,8 @@
     "languages": [
       "en"
     ],
-    "infrastructure": "team"
+    "infrastructure": "team",
+    "syncUrl": "http://localhost:5984"
   },
   "authentication": {
     "method": "basic",
