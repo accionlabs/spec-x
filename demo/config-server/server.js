@@ -401,6 +401,44 @@ app.post('/config', (req, res) => {
   }
 })
 
+// PATCH /config/:name - Partial update of a config
+app.patch('/config/:name', (req, res) => {
+  const { name } = req.params
+  const updates = req.body
+
+  // Load existing config
+  const existingConfig = loadConfigByName(name)
+  if (!existingConfig || existingConfig.version === '0') {
+    return res.status(404).json({ success: false, error: 'Config not found' })
+  }
+
+  // Deep merge the updates
+  const mergedConfig = {
+    ...existingConfig,
+    ...updates,
+    // Deep merge nested objects
+    features: { ...existingConfig.features, ...updates.features },
+    constraints: { ...existingConfig.constraints, ...updates.constraints },
+    customFields: updates.customFields || existingConfig.customFields,
+    workflowStates: updates.workflowStates || existingConfig.workflowStates,
+    authentication: { ...existingConfig.authentication, ...updates.authentication },
+    // Update version
+    version: Date.now().toString()
+  }
+
+  if (saveConfigByName(name, mergedConfig)) {
+    console.log(`[${new Date().toISOString()}] PATCH /config/${name} - updated`)
+    console.log('  - Updated fields:', Object.keys(updates).join(', '))
+    res.json({
+      success: true,
+      version: mergedConfig.version,
+      name: name
+    })
+  } else {
+    res.status(500).json({ success: false, error: 'Failed to save config' })
+  }
+})
+
 // POST /config/activate/:name - Set the active config
 app.post('/config/activate/:name', (req, res) => {
   const { name } = req.params

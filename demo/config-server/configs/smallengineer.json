@@ -1,9 +1,11 @@
 {
-  "version": "1768391657997",
-  "generatedAt": "2026-01-14T11:54:17.997Z",
+  "version": "1768805315849",
+  "generatedAt": "2026-01-19T06:48:35.849Z",
   "features": {
     "personas": [
-      "technician"
+      "technician",
+      "dispatcher",
+      "manager"
     ],
     "scenarios": [
       "create-work-orders",
@@ -68,7 +70,7 @@
     "languages": [
       "en"
     ],
-    "infrastructure": "individual"
+    "infrastructure": "team"
   },
   "authentication": {
     "method": "basic",

@@ -1,4 +1,5 @@
-import { Wrench, Radio, Briefcase, Package, ArrowRight, Settings } from 'lucide-react'
+import { useState } from 'react'
+import { Wrench, Radio, Briefcase, Package, ArrowRight, Settings, Server, CheckCircle, XCircle, Loader2, Users, Copy, Check } from 'lucide-react'
 import { PERSONA_THEMES } from '../theme'
 import { parsePathInfo } from '../../config/loader'
 import { useConfig } from '../../config'
@@ -43,15 +44,87 @@ function OnboardingRedirect() {
 // Personas that require a sync server to function
 const SYNC_REQUIRED_PERSONAS = ['dispatcher', 'manager']
 
+// Infrastructure labels
+const INFRASTRUCTURE_LABELS: Record<string, string> = {
+  individual: 'Individual',
+  team: 'Small Team',
+  department: 'Department',
+  enterprise: 'Enterprise'
+}
+
 // Config landing page - clean splash screen
 function ConfigLandingPage({ configName }: { configName: string }) {
-  const { config, isLoading } = useConfig()
+  const { config, isLoading, refreshConfig } = useConfig()
+  const [syncUrl, setSyncUrl] = useState('')
+  const [syncStatus, setSyncStatus] = useState<'idle' | 'testing' | 'success' | 'error'>('idle')
+  const [syncError, setSyncError] = useState<string | null>(null)
+  const [copiedCommand, setCopiedCommand] = useState(false)
 
   // Check which personas are enabled in the config
   const enabledPersonas = config.features?.personas || []
 
   // Check if sync is available (syncUrl is configured)
   const hasSyncServer = Boolean(config.constraints?.syncUrl)
+
+  // Check if this is a team configuration (not individual)
+  const infrastructure = config.constraints?.infrastructure || 'individual'
+  const isTeamConfig = infrastructure !== 'individual'
+  const needsSyncSetup = isTeamConfig && !hasSyncServer
+
+  // Test sync connection
+  const testSyncConnection = async () => {
+    if (!syncUrl) return
+
+    setSyncStatus('testing')
+    setSyncError(null)
+
+    try {
+      const response = await fetch(`${syncUrl}/_up`, {
+        method: 'GET',
+        mode: 'cors',
+      })
+
+      if (response.ok) {
+        setSyncStatus('success')
+        // Save to config server
+        await saveSyncUrl(syncUrl)
+      } else {
+        setSyncStatus('error')
+        setSyncError(`Server returned ${response.status}`)
+      }
+    } catch (err) {
+      setSyncStatus('error')
+      setSyncError('Could not connect to server')
+    }
+  }
+
+  // Save sync URL to config
+  const saveSyncUrl = async (url: string) => {
+    try {
+      const response = await fetch(`http://localhost:3002/config/${configName}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          constraints: {
+            ...config.constraints,
+            syncUrl: url
+          }
+        })
+      })
+      if (response.ok) {
+        // Refresh config to pick up the change
+        await refreshConfig()
+      }
+    } catch (err) {
+      console.error('Failed to save sync URL:', err)
+    }
+  }
+
+  const copyInstallCommand = () => {
+    navigator.clipboard.writeText('curl -sL https://your-server.com/sync/install.sh | bash')
+    setCopiedCommand(true)
+    setTimeout(() => setCopiedCommand(false), 2000)
+  }
 
   const personas = [
     {
@@ -99,7 +172,113 @@ function ConfigLandingPage({ configName }: { configName: string }) {
 
       {/* App Title */}
       <h1 className="text-3xl font-bold text-white mb-1">Field Service</h1>
-      <p className="text-slate-400 mb-10">{formatConfigName(configName)}</p>
+      <p className="text-slate-400 mb-2">{formatConfigName(configName)}</p>
+
+      {/* Team Badge - shows infrastructure level */}
+      {isTeamConfig && (
+        <div className="flex items-center gap-2 mb-6">
+          <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-purple-500/20 border border-purple-500/30 rounded-full text-purple-300 text-sm">
+            <Users className="w-4 h-4" />
+            {INFRASTRUCTURE_LABELS[infrastructure]} Mode
+          </span>
+          {hasSyncServer && (
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-green-500/20 border border-green-500/30 rounded-full text-green-300 text-sm">
+              <CheckCircle className="w-4 h-4" />
+              Sync Active
+            </span>
+          )}
+        </div>
+      )}
+
+      {!isTeamConfig && <div className="mb-8" />}
+
+      {/* Sync Server Setup - shown when team config but no sync */}
+      {needsSyncSetup && (
+        <div className="w-full max-w-sm mb-8">
+          <div className="bg-amber-500/10 border border-amber-500/30 rounded-xl p-5">
+            <div className="flex items-start gap-3 mb-4">
+              <div className="w-10 h-10 bg-amber-500/20 rounded-lg flex items-center justify-center flex-shrink-0">
+                <Server className="w-5 h-5 text-amber-400" />
+              </div>
+              <div>
+                <h3 className="font-semibold text-white">Sync Server Required</h3>
+                <p className="text-sm text-slate-400 mt-1">
+                  Team mode requires a sync server to share data between users.
+                </p>
+              </div>
+            </div>
+
+            {/* Quick Install */}
+            <div className="mb-4">
+              <div className="text-xs text-slate-400 uppercase tracking-wide mb-2">Quick Install</div>
+              <div className="relative">
+                <div className="bg-slate-900 text-slate-300 px-3 py-2 rounded-lg font-mono text-xs overflow-x-auto">
+                  curl -sL https://your-server.com/sync/install.sh | bash
+                </div>
+                <button
+                  onClick={copyInstallCommand}
+                  className="absolute top-1.5 right-1.5 p-1 bg-slate-700 hover:bg-slate-600 rounded transition-colors"
+                >
+                  {copiedCommand ? (
+                    <Check className="w-3 h-3 text-green-400" />
+                  ) : (
+                    <Copy className="w-3 h-3 text-slate-400" />
+                  )}
+                </button>
+              </div>
+            </div>
+
+            {/* Sync URL Input */}
+            <div>
+              <div className="text-xs text-slate-400 uppercase tracking-wide mb-2">Sync Server URL</div>
+              <div className="flex gap-2">
+                <div className="flex-1 relative">
+                  <input
+                    type="url"
+                    value={syncUrl}
+                    onChange={(e) => {
+                      setSyncUrl(e.target.value)
+                      setSyncStatus('idle')
+                    }}
+                    placeholder="http://100.x.x.x:5984"
+                    className="w-full px-3 py-2.5 bg-slate-800 border border-slate-600 rounded-lg text-white placeholder-slate-500 focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none text-sm"
+                  />
+                  {syncStatus === 'success' && (
+                    <CheckCircle className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-green-400" />
+                  )}
+                  {syncStatus === 'error' && (
+                    <XCircle className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-red-400" />
+                  )}
+                </div>
+                <button
+                  onClick={testSyncConnection}
+                  disabled={!syncUrl || syncStatus === 'testing'}
+                  className="px-4 py-2.5 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:bg-slate-600 disabled:cursor-not-allowed transition-colors text-sm font-medium flex items-center gap-2"
+                >
+                  {syncStatus === 'testing' ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    'Connect'
+                  )}
+                </button>
+              </div>
+
+              {syncStatus === 'success' && (
+                <p className="mt-2 text-sm text-green-400 flex items-center gap-1">
+                  <CheckCircle className="w-4 h-4" />
+                  Connected! Refreshing...
+                </p>
+              )}
+              {syncStatus === 'error' && syncError && (
+                <p className="mt-2 text-sm text-red-400 flex items-center gap-1">
+                  <XCircle className="w-4 h-4" />
+                  {syncError}
+                </p>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Persona Start Buttons */}
       <div className="w-full max-w-sm space-y-3 mb-8">
