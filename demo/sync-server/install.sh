@@ -304,8 +304,6 @@ echo -e "  ${GREEN}✓${NC} Created $INSTALL_DIR"
 
 # Create docker-compose.yml (works with both podman-compose and docker-compose)
 cat > docker-compose.yml << 'COMPOSE_EOF'
-version: '3.8'
-
 services:
   couchdb:
     image: couchdb:3.3
@@ -318,7 +316,7 @@ services:
       - COUCHDB_PASSWORD=${COUCH_PASSWORD:-password}
     volumes:
       - couchdb_data:/opt/couchdb/data
-      - ./couchdb.ini:/opt/couchdb/etc/local.d/docker.ini:ro
+      - ./couchdb.ini:/opt/couchdb/etc/local.d/docker.ini
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:5984/_up"]
       interval: 10s
