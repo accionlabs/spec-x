@@ -5,7 +5,7 @@ import {
   Home, ClipboardList, Wrench, Settings, Wifi, WifiOff, RefreshCw, Check, Plus,
   ClipboardCheck, Map, BarChart3, Users, AlertTriangle
 } from 'lucide-react'
-import { initializeDB, setupSync, stopSync, subscribeSyncState } from '../../db'
+import { initializeDB, setupSync, stopSync, subscribeSyncState, subscribeToDataChanges } from '../../db'
 import { useConfig, useConstraints, useEnabledScenarios } from '../../config'
 import { parsePathInfo } from '../../config/loader'
 import { usePersonaTheme, usePersonaId } from '../theme'
@@ -121,10 +121,16 @@ export function PersonaApp() {
     if (!dbReady) return
 
     // Subscribe to sync state changes
-    const unsubscribe = subscribeSyncState((state) => {
+    const unsubscribeSyncState = subscribeSyncState((state) => {
       setIsSyncing(state.isActive && !state.isPaused)
       setLastSync(state.lastSync)
       setSyncError(state.error)
+    })
+
+    // Subscribe to data changes (from sync) to refresh UI
+    const unsubscribeDataChanges = subscribeToDataChanges(() => {
+      console.log('Data changed via sync, refreshing UI')
+      setRefreshKey(prev => prev + 1)
     })
 
     // Start sync if URL is configured
@@ -133,7 +139,8 @@ export function PersonaApp() {
     }
 
     return () => {
-      unsubscribe()
+      unsubscribeSyncState()
+      unsubscribeDataChanges()
       stopSync()
     }
   }, [dbReady, constraints.syncUrl])

@@ -400,9 +400,57 @@ export async function getEquipmentBySerial(serialNumber: string): Promise<Equipm
   return all.find(eq => eq.serialNumber === serialNumber) || null
 }
 
+// Data change listeners - for UI refresh on sync
+let dataChangeListeners: (() => void)[] = []
+
+export function subscribeToDataChanges(listener: () => void): () => void {
+  dataChangeListeners.push(listener)
+  return () => {
+    dataChangeListeners = dataChangeListeners.filter(l => l !== listener)
+  }
+}
+
+function notifyDataChange() {
+  dataChangeListeners.forEach(listener => listener())
+}
+
+// Create remote database if it doesn't exist
+async function ensureRemoteDBExists(remoteUrl: string, syncUrl: string): Promise<boolean> {
+  try {
+    // Extract database name from URL
+    const dbName = remoteUrl.split('/').pop()
+    console.log(`Ensuring remote DB exists: ${dbName}`)
+
+    // Try to create the database (will succeed if doesn't exist, or return 412 if exists)
+    const response = await fetch(remoteUrl, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' }
+    })
+
+    if (response.ok) {
+      console.log(`Created remote database: ${dbName}`)
+    } else if (response.status === 412) {
+      console.log(`Remote database already exists: ${dbName}`)
+    } else {
+      console.warn(`Could not create remote database: ${response.status}`)
+      return false
+    }
+    return true
+  } catch (err) {
+    console.error('Error creating remote database:', err)
+    return false
+  }
+}
+
 // Sync Functions
-function setupSyncForDB(localDB: PouchDBInstance, remoteUrl: string, dbName: string) {
+async function setupSyncForDB(localDB: PouchDBInstance, remoteUrl: string, dbName: string, syncUrl: string) {
   console.log(`Setting up sync for ${dbName} to ${remoteUrl}`)
+
+  // Ensure remote database exists first
+  const dbExists = await ensureRemoteDBExists(remoteUrl, syncUrl)
+  if (!dbExists) {
+    console.warn(`Could not ensure remote DB exists, sync may fail`)
+  }
 
   const sync = localDB.sync(remoteUrl, {
     live: true,
@@ -417,6 +465,8 @@ function setupSyncForDB(localDB: PouchDBInstance, remoteUrl: string, dbName: str
       error: null
     }
     notifySyncStateChange()
+    // Notify UI components that data has changed
+    notifyDataChange()
   })
 
   sync.on('paused', () => {
@@ -452,7 +502,7 @@ function setupSyncForDB(localDB: PouchDBInstance, remoteUrl: string, dbName: str
   return sync
 }
 
-export function setupSync(syncUrl: string): void {
+export async function setupSync(syncUrl: string): Promise<void> {
   // Cancel existing sync handlers
   stopSync()
 
@@ -476,8 +526,8 @@ export function setupSync(syncUrl: string): void {
   }
   notifySyncStateChange()
 
-  setupSyncForDB(getWorkOrdersDB(), workOrdersRemote, 'workorders')
-  setupSyncForDB(getEquipmentDB(), equipmentRemote, 'equipment')
+  await setupSyncForDB(getWorkOrdersDB(), workOrdersRemote, 'workorders', syncUrl)
+  await setupSyncForDB(getEquipmentDB(), equipmentRemote, 'equipment', syncUrl)
 
   console.log(`Sync started with ${syncUrl}`)
 }

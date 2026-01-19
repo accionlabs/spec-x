@@ -237,21 +237,23 @@ function loadConfigByName(name) {
     _serverSettings: SERVER_SETTINGS
   }
 
-  // Check if it's a preset
-  if (PRESET_CONFIGS[name]) {
-    return { ...PRESET_CONFIGS[name].config, ...metadata, _preset: name }
-  }
-
-  // Check saved configs
+  // Check saved configs FIRST - this allows presets to be modified via PATCH
   const configPath = join(CONFIG_DIR, `${name}.json`)
   try {
     if (existsSync(configPath)) {
       const data = readFileSync(configPath, 'utf-8')
       const config = JSON.parse(data)
-      return { ...config, ...metadata }
+      // Mark if this was originally a preset that has been modified
+      const wasPreset = PRESET_CONFIGS[name] ? true : false
+      return { ...config, ...metadata, _modifiedPreset: wasPreset }
     }
   } catch (err) {
     console.error(`Error loading config ${name}:`, err.message)
+  }
+
+  // Fall back to preset if no saved config exists
+  if (PRESET_CONFIGS[name]) {
+    return { ...PRESET_CONFIGS[name].config, ...metadata, _preset: name }
   }
 
   // Return empty config - no defaults
