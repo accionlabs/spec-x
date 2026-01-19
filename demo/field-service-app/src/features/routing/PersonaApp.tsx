@@ -215,37 +215,54 @@ export function PersonaApp() {
       {/* Status Bar */}
       <div className={`px-4 py-2 text-white text-sm flex items-center justify-between ${theme.statusBar}`}>
         <div className="flex items-center gap-2">
-          {isOnline ? (
-            <>
-              <Wifi className="w-4 h-4" />
-              <span>{t('status.online')}</span>
-            </>
+          {/* Connection status - shows sync server status when configured, otherwise browser status */}
+          {constraints.syncUrl ? (
+            // Team mode: show sync server connection status
+            syncError ? (
+              <>
+                <WifiOff className="w-4 h-4 text-red-300" />
+                <span className="text-red-200">Connection Error</span>
+              </>
+            ) : !isOnline ? (
+              <>
+                <WifiOff className="w-4 h-4" />
+                <span>{t('status.offline')}</span>
+              </>
+            ) : lastSync ? (
+              <>
+                <Wifi className="w-4 h-4 text-green-300" />
+                <span>Connected</span>
+              </>
+            ) : (
+              <>
+                <RefreshCw className="w-4 h-4 animate-spin" />
+                <span>Connecting...</span>
+              </>
+            )
           ) : (
+            // Individual mode: show local mode indicator
             <>
-              <WifiOff className="w-4 h-4" />
-              <span>{t('status.offline')}</span>
+              <Home className="w-4 h-4" />
+              <span>Local Mode</span>
             </>
           )}
         </div>
         <div className="flex items-center gap-2">
-          {syncError ? (
-            <span className="text-red-200">{syncError}</span>
-          ) : isSyncing ? (
-            <>
-              <RefreshCw className="w-4 h-4 animate-spin" />
-              <span>{t('status.syncing')}</span>
-            </>
-          ) : constraints.syncUrl ? (
-            lastSync ? (
+          {/* Sync activity indicator - only shown when sync is configured */}
+          {constraints.syncUrl ? (
+            isSyncing ? (
+              <>
+                <RefreshCw className="w-4 h-4 animate-spin" />
+                <span>{t('status.syncing')}</span>
+              </>
+            ) : lastSync ? (
               <>
                 <Check className="w-4 h-4" />
                 <span>{t('status.synced')}</span>
               </>
-            ) : (
-              <span className="opacity-75">Connecting...</span>
-            )
+            ) : null
           ) : (
-            <span className="opacity-75">Individual mode</span>
+            <span className="opacity-75">Local only</span>
           )}
         </div>
       </div>

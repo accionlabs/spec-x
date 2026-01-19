@@ -121,7 +121,7 @@ function ConfigLandingPage({ configName }: { configName: string }) {
   }
 
   const copyInstallCommand = () => {
-    navigator.clipboard.writeText('curl -sL https://your-server.com/sync/install.sh | bash')
+    navigator.clipboard.writeText('curl -sL https://raw.githubusercontent.com/accionlabs/spec-x/main/demo/sync-server/install.sh | bash')
     setCopiedCommand(true)
     setTimeout(() => setCopiedCommand(false), 2000)
   }
@@ -213,7 +213,7 @@ function ConfigLandingPage({ configName }: { configName: string }) {
               <div className="text-xs text-slate-400 uppercase tracking-wide mb-2">Quick Install</div>
               <div className="relative">
                 <div className="bg-slate-900 text-slate-300 px-3 py-2 rounded-lg font-mono text-xs overflow-x-auto">
-                  curl -sL https://your-server.com/sync/install.sh | bash
+                  curl -sL https://raw.githubusercontent.com/accionlabs/spec-x/main/demo/sync-server/install.sh | bash
                 </div>
                 <button
                   onClick={copyInstallCommand}

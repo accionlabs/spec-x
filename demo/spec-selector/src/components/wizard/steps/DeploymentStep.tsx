@@ -1,8 +1,8 @@
 import { useState } from 'react'
 import { Wifi, WifiOff, Globe, Link, CheckCircle, XCircle, Loader2, ChevronDown, ChevronUp, Copy, Check, Terminal, Server } from 'lucide-react'
 
-// The install URL - update this to your actual hosted install script
-const INSTALL_SCRIPT_URL = 'https://your-server.com/sync/install.sh'
+// GitHub raw URL for the install script
+const INSTALL_SCRIPT_URL = 'https://raw.githubusercontent.com/accionlabs/spec-x/main/demo/sync-server/install.sh'
 
 interface Constraints {
   offlineFirst: boolean

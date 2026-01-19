@@ -116,7 +116,7 @@ cd demo/field-service-app && npm install && npm run dev
 For team collaboration, you need a sync server. Run the one-line installer:
 
 ```bash
-curl -sL https://your-server.com/sync/install.sh | bash
+curl -sL https://raw.githubusercontent.com/accionlabs/spec-x/main/demo/sync-server/install.sh | bash
 ```
 
 This will:
